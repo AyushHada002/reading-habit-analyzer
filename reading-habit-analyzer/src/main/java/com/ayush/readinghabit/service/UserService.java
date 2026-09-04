@@ -3,6 +3,8 @@ package com.ayush.readinghabit.service;
 import com.ayush.readinghabit.dto.UserRequestDTO;
 import com.ayush.readinghabit.dto.UserResponseDTO;
 import com.ayush.readinghabit.entity.User;
+import com.ayush.readinghabit.exception.DuplicateResourceException;
+import com.ayush.readinghabit.exception.ResourceNotFoundException;
 import com.ayush.readinghabit.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
@@ -21,7 +23,9 @@ public class UserService {
     public UserResponseDTO createUser(UserRequestDTO request) {
 
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
-            throw new RuntimeException("Email already exists");
+            throw new DuplicateResourceException(
+                    "Email already exists: " + request.getEmail()
+            );
         }
 
         User user = new User();
@@ -48,7 +52,10 @@ public class UserService {
 
         User user = userRepository.findById(id)
                 .orElseThrow(() ->
-                        new RuntimeException("User not found with id: " + id));
+                        new ResourceNotFoundException(
+                                "User not found with id: " + id
+                        )
+                );
 
         return convertToResponseDTO(user);
     }
@@ -59,7 +66,10 @@ public class UserService {
 
         User existingUser = userRepository.findById(id)
                 .orElseThrow(() ->
-                        new RuntimeException("User not found with id: " + id));
+                        new ResourceNotFoundException(
+                                "User not found with id: " + id
+                        )
+                );
 
         existingUser.setName(request.getName());
         existingUser.setEmail(request.getEmail());
@@ -74,7 +84,10 @@ public class UserService {
 
         User existingUser = userRepository.findById(id)
                 .orElseThrow(() ->
-                        new RuntimeException("User not found with id: " + id));
+                        new ResourceNotFoundException(
+                                "User not found with id: " + id
+                        )
+                );
 
         userRepository.delete(existingUser);
     }
