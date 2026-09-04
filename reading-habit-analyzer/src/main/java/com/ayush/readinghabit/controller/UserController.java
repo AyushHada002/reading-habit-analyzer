@@ -1,7 +1,9 @@
 package com.ayush.readinghabit.controller;
 
-import com.ayush.readinghabit.entity.User;
+import com.ayush.readinghabit.dto.UserRequestDTO;
+import com.ayush.readinghabit.dto.UserResponseDTO;
 import com.ayush.readinghabit.service.UserService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -19,41 +21,51 @@ public class UserController {
     }
 
     @PostMapping
-    public ResponseEntity<User> createUser(@RequestBody User user) {
+    public ResponseEntity<UserResponseDTO> createUser(
+            @Valid @RequestBody UserRequestDTO request) {
 
-        User createdUser = userService.createUser(user);
+        UserResponseDTO createdUser =
+                userService.createUser(request);
 
-        return new ResponseEntity<>(createdUser, HttpStatus.CREATED);
+        return new ResponseEntity<>(
+                createdUser,
+                HttpStatus.CREATED
+        );
     }
 
     @GetMapping
-    public ResponseEntity<List<User>> getAllUsers() {
+    public ResponseEntity<List<UserResponseDTO>> getAllUsers() {
 
-        List<User> users = userService.getAllUsers();
+        List<UserResponseDTO> users =
+                userService.getAllUsers();
 
         return ResponseEntity.ok(users);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<User> getUserById(@PathVariable Long id) {
+    public ResponseEntity<UserResponseDTO> getUserById(
+            @PathVariable Long id) {
 
-        User user = userService.getUserById(id);
+        UserResponseDTO user =
+                userService.getUserById(id);
 
         return ResponseEntity.ok(user);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<User> updateUser(
+    public ResponseEntity<UserResponseDTO> updateUser(
             @PathVariable Long id,
-            @RequestBody User user) {
+            @Valid @RequestBody UserRequestDTO request) {
 
-        User updatedUser = userService.updateUser(id, user);
+        UserResponseDTO updatedUser =
+                userService.updateUser(id, request);
 
         return ResponseEntity.ok(updatedUser);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteUser(
+            @PathVariable Long id) {
 
         userService.deleteUser(id);
 

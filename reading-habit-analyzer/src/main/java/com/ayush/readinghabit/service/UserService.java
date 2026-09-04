@@ -1,5 +1,7 @@
 package com.ayush.readinghabit.service;
 
+import com.ayush.readinghabit.dto.UserRequestDTO;
+import com.ayush.readinghabit.dto.UserResponseDTO;
 import com.ayush.readinghabit.entity.User;
 import com.ayush.readinghabit.repository.UserRepository;
 import org.springframework.stereotype.Service;
@@ -16,43 +18,74 @@ public class UserService {
         this.userRepository = userRepository;
     }
 
-    public User createUser(User user) {
+    public UserResponseDTO createUser(UserRequestDTO request) {
 
-        if (userRepository.findByEmail(user.getEmail()).isPresent()) {
+        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
             throw new RuntimeException("Email already exists");
         }
 
+        User user = new User();
+
+        user.setName(request.getName());
+        user.setEmail(request.getEmail());
+        user.setPassword(request.getPassword());
         user.setCreatedAt(LocalDateTime.now());
 
-        return userRepository.save(user);
+        User savedUser = userRepository.save(user);
+
+        return convertToResponseDTO(savedUser);
     }
 
-    public List<User> getAllUsers() {
-        return userRepository.findAll();
+    public List<UserResponseDTO> getAllUsers() {
+
+        return userRepository.findAll()
+                .stream()
+                .map(this::convertToResponseDTO)
+                .toList();
     }
 
-    public User getUserById(Long id) {
+    public UserResponseDTO getUserById(Long id) {
 
-        return userRepository.findById(id)
+        User user = userRepository.findById(id)
                 .orElseThrow(() ->
                         new RuntimeException("User not found with id: " + id));
+
+        return convertToResponseDTO(user);
     }
 
-    public User updateUser(Long id, User updatedUser) {
+    public UserResponseDTO updateUser(
+            Long id,
+            UserRequestDTO request) {
 
-        User existingUser = getUserById(id);
+        User existingUser = userRepository.findById(id)
+                .orElseThrow(() ->
+                        new RuntimeException("User not found with id: " + id));
 
-        existingUser.setName(updatedUser.getName());
-        existingUser.setEmail(updatedUser.getEmail());
-        existingUser.setPassword(updatedUser.getPassword());
+        existingUser.setName(request.getName());
+        existingUser.setEmail(request.getEmail());
+        existingUser.setPassword(request.getPassword());
 
-        return userRepository.save(existingUser);
+        User updatedUser = userRepository.save(existingUser);
+
+        return convertToResponseDTO(updatedUser);
     }
 
     public void deleteUser(Long id) {
 
-        User existingUser = getUserById(id);
+        User existingUser = userRepository.findById(id)
+                .orElseThrow(() ->
+                        new RuntimeException("User not found with id: " + id));
 
         userRepository.delete(existingUser);
+    }
+
+    private UserResponseDTO convertToResponseDTO(User user) {
+
+        return new UserResponseDTO(
+                user.getId(),
+                user.getName(),
+                user.getEmail(),
+                user.getCreatedAt()
+        );
     }
 }
