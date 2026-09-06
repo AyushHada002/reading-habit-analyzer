@@ -10,6 +10,7 @@ import com.ayush.readinghabit.repository.BookRepository;
 import com.ayush.readinghabit.repository.ReadingSessionRepository;
 import com.ayush.readinghabit.repository.UserRepository;
 import org.springframework.stereotype.Service;
+import com.ayush.readinghabit.exception.BusinessRuleException;
 
 import java.util.List;
 
@@ -203,7 +204,7 @@ public class ReadingSessionService {
 
         if (!book.getUser().getId().equals(user.getId())) {
 
-            throw new IllegalArgumentException(
+            throw new BusinessRuleException(
                     "Book does not belong to the specified user"
             );
         }
