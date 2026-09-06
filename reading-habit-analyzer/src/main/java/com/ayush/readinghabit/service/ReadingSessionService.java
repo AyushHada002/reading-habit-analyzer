@@ -1,0 +1,227 @@
+package com.ayush.readinghabit.service;
+
+import com.ayush.readinghabit.dto.ReadingSessionRequestDTO;
+import com.ayush.readinghabit.dto.ReadingSessionResponseDTO;
+import com.ayush.readinghabit.entity.Book;
+import com.ayush.readinghabit.entity.ReadingSession;
+import com.ayush.readinghabit.entity.User;
+import com.ayush.readinghabit.exception.ResourceNotFoundException;
+import com.ayush.readinghabit.repository.BookRepository;
+import com.ayush.readinghabit.repository.ReadingSessionRepository;
+import com.ayush.readinghabit.repository.UserRepository;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+
+@Service
+public class ReadingSessionService {
+
+    private final ReadingSessionRepository readingSessionRepository;
+    private final UserRepository userRepository;
+    private final BookRepository bookRepository;
+
+    public ReadingSessionService(
+            ReadingSessionRepository readingSessionRepository,
+            UserRepository userRepository,
+            BookRepository bookRepository) {
+
+        this.readingSessionRepository = readingSessionRepository;
+        this.userRepository = userRepository;
+        this.bookRepository = bookRepository;
+    }
+
+    // Create Reading Session
+    public ReadingSessionResponseDTO createSession(
+            ReadingSessionRequestDTO request) {
+
+        User user = findUser(request.getUserId());
+
+        Book book = findBook(request.getBookId());
+
+        validateBookOwnership(book, user);
+
+        ReadingSession session = new ReadingSession();
+
+        session.setReadingDate(request.getReadingDate());
+        session.setDurationMinutes(request.getDurationMinutes());
+        session.setPagesRead(request.getPagesRead());
+        session.setNotes(request.getNotes());
+        session.setUser(user);
+        session.setBook(book);
+
+        ReadingSession savedSession =
+                readingSessionRepository.save(session);
+
+        return convertToResponseDTO(savedSession);
+    }
+
+    // Get All Reading Sessions
+    public List<ReadingSessionResponseDTO> getAllSessions() {
+
+        return readingSessionRepository.findAll()
+                .stream()
+                .map(this::convertToResponseDTO)
+                .toList();
+    }
+
+    // Get Reading Session By ID
+    public ReadingSessionResponseDTO getSessionById(Long id) {
+
+        ReadingSession session =
+                readingSessionRepository.findById(id)
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException(
+                                        "Reading session not found with id: " + id
+                                )
+                        );
+
+        return convertToResponseDTO(session);
+    }
+
+    // Get Sessions By User
+    public List<ReadingSessionResponseDTO> getSessionsByUserId(
+            Long userId) {
+
+        if (!userRepository.existsById(userId)) {
+            throw new ResourceNotFoundException(
+                    "User not found with id: " + userId
+            );
+        }
+
+        return readingSessionRepository.findByUserId(userId)
+                .stream()
+                .map(this::convertToResponseDTO)
+                .toList();
+    }
+
+    // Get Sessions By Book
+    public List<ReadingSessionResponseDTO> getSessionsByBookId(
+            Long bookId) {
+
+        if (!bookRepository.existsById(bookId)) {
+            throw new ResourceNotFoundException(
+                    "Book not found with id: " + bookId
+            );
+        }
+
+        return readingSessionRepository.findByBookId(bookId)
+                .stream()
+                .map(this::convertToResponseDTO)
+                .toList();
+    }
+
+    // Get Sessions By User And Book
+    public List<ReadingSessionResponseDTO> getSessionsByUserAndBook(
+            Long userId,
+            Long bookId) {
+
+        User user = findUser(userId);
+
+        Book book = findBook(bookId);
+
+        validateBookOwnership(book, user);
+
+        return readingSessionRepository
+                .findByUserIdAndBookId(userId, bookId)
+                .stream()
+                .map(this::convertToResponseDTO)
+                .toList();
+    }
+
+    // Update Reading Session
+    public ReadingSessionResponseDTO updateSession(
+            Long id,
+            ReadingSessionRequestDTO request) {
+
+        ReadingSession existingSession =
+                readingSessionRepository.findById(id)
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException(
+                                        "Reading session not found with id: " + id
+                                )
+                        );
+
+        User user = findUser(request.getUserId());
+
+        Book book = findBook(request.getBookId());
+
+        validateBookOwnership(book, user);
+
+        existingSession.setReadingDate(request.getReadingDate());
+        existingSession.setDurationMinutes(request.getDurationMinutes());
+        existingSession.setPagesRead(request.getPagesRead());
+        existingSession.setNotes(request.getNotes());
+        existingSession.setUser(user);
+        existingSession.setBook(book);
+
+        ReadingSession updatedSession =
+                readingSessionRepository.save(existingSession);
+
+        return convertToResponseDTO(updatedSession);
+    }
+
+    // Delete Reading Session
+    public void deleteSession(Long id) {
+
+        ReadingSession existingSession =
+                readingSessionRepository.findById(id)
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException(
+                                        "Reading session not found with id: " + id
+                                )
+                        );
+
+        readingSessionRepository.delete(existingSession);
+    }
+
+    // Find User
+    private User findUser(Long userId) {
+
+        return userRepository.findById(userId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "User not found with id: " + userId
+                        )
+                );
+    }
+
+    // Find Book
+    private Book findBook(Long bookId) {
+
+        return bookRepository.findById(bookId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Book not found with id: " + bookId
+                        )
+                );
+    }
+
+    // Validate Book Ownership
+    private void validateBookOwnership(
+            Book book,
+            User user) {
+
+        if (!book.getUser().getId().equals(user.getId())) {
+
+            throw new IllegalArgumentException(
+                    "Book does not belong to the specified user"
+            );
+        }
+    }
+
+    // Convert Entity → Response DTO
+    private ReadingSessionResponseDTO convertToResponseDTO(
+            ReadingSession session) {
+
+        return new ReadingSessionResponseDTO(
+                session.getId(),
+                session.getReadingDate(),
+                session.getDurationMinutes(),
+                session.getPagesRead(),
+                session.getNotes(),
+                session.getUser().getId(),
+                session.getBook().getId(),
+                session.getBook().getTitle()
+        );
+    }
+}
