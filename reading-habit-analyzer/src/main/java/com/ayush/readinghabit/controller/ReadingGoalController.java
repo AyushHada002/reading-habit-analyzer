@@ -7,6 +7,7 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.ayush.readinghabit.dto.ReadingGoalProgressDTO;
 
 import java.util.List;
 
@@ -53,6 +54,16 @@ public class ReadingGoalController {
                 readingGoalService.getGoalById(id);
 
         return ResponseEntity.ok(goal);
+    }
+
+    @GetMapping("/{id}/progress")
+    public ResponseEntity<ReadingGoalProgressDTO> getGoalProgress(
+            @PathVariable Long id) {
+
+        ReadingGoalProgressDTO progress =
+                readingGoalService.getGoalProgress(id);
+
+        return ResponseEntity.ok(progress);
     }
 
     @PutMapping("/{id}")

@@ -9,7 +9,10 @@ import com.ayush.readinghabit.exception.ResourceNotFoundException;
 import com.ayush.readinghabit.repository.ReadingGoalRepository;
 import com.ayush.readinghabit.repository.UserRepository;
 import org.springframework.stereotype.Service;
+import com.ayush.readinghabit.dto.ReadingGoalProgressDTO;
+import com.ayush.readinghabit.repository.ReadingSessionRepository;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -17,13 +20,16 @@ public class ReadingGoalService {
 
     private final ReadingGoalRepository readingGoalRepository;
     private final UserRepository userRepository;
+    private final ReadingSessionRepository readingSessionRepository;
 
     public ReadingGoalService(
             ReadingGoalRepository readingGoalRepository,
-            UserRepository userRepository) {
+            UserRepository userRepository,
+            ReadingSessionRepository readingSessionRepository) {
 
         this.readingGoalRepository = readingGoalRepository;
         this.userRepository = userRepository;
+        this.readingSessionRepository = readingSessionRepository;
     }
 
     public ReadingGoalResponseDTO createGoal(
@@ -176,5 +182,87 @@ public class ReadingGoalService {
                 goal.getTargetMinutes(),
                 goal.getUser().getId()
         );
+    }
+    public ReadingGoalProgressDTO getGoalProgress(Long goalId) {
+
+        ReadingGoal goal =
+                readingGoalRepository.findById(goalId)
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException(
+                                        "Reading goal not found with id: "
+                                                + goalId
+                                )
+                        );
+
+        Long userId = goal.getUser().getId();
+
+        LocalDate startDate =
+                goal.getMonth().atDay(1);
+
+        LocalDate endDate =
+                goal.getMonth().atEndOfMonth();
+
+        long pagesRead =
+                readingSessionRepository
+                        .sumPagesReadByUserIdAndDateRange(
+                                userId,
+                                startDate,
+                                endDate
+                        );
+
+        long minutesRead =
+                readingSessionRepository
+                        .sumDurationMinutesByUserIdAndDateRange(
+                                userId,
+                                startDate,
+                                endDate
+                        );
+
+        double pageProgress =
+                calculatePercentage(
+                        pagesRead,
+                        goal.getTargetPages()
+                );
+
+        double timeProgress =
+                calculatePercentage(
+                        minutesRead,
+                        goal.getTargetMinutes()
+                );
+
+        double overallProgress =
+                (pageProgress + timeProgress) / 2;
+
+        return new ReadingGoalProgressDTO(
+                goal.getId(),
+                userId,
+                goal.getMonth(),
+                goal.getTargetPages(),
+                pagesRead,
+                roundToTwoDecimals(pageProgress),
+                goal.getTargetMinutes(),
+                minutesRead,
+                roundToTwoDecimals(timeProgress),
+                roundToTwoDecimals(overallProgress)
+        );
+    }
+
+    private double calculatePercentage(
+            long actual,
+            int target) {
+
+        if (target <= 0) {
+            return 0.0;
+        }
+
+        double percentage =
+                ((double) actual / target) * 100;
+
+        return Math.min(percentage, 100.0);
+    }
+
+    private double roundToTwoDecimals(double value) {
+
+        return Math.round(value * 100.0) / 100.0;
     }
 }

@@ -7,6 +7,8 @@ import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.time.LocalDate;
+import java.time.YearMonth;
 
 public interface ReadingSessionRepository
         extends JpaRepository<ReadingSession, Long> {
@@ -46,4 +48,30 @@ public interface ReadingSessionRepository
         WHERE r.book.id = :bookId
         """)
     long sumPagesReadByBookId(@Param("bookId") Long bookId);
+
+    @Query("""
+        SELECT COALESCE(SUM(r.pagesRead), 0)
+        FROM ReadingSession r
+        WHERE r.user.id = :userId
+        AND r.readingDate >= :startDate
+        AND r.readingDate <= :endDate
+        """)
+    long sumPagesReadByUserIdAndDateRange(
+            @Param("userId") Long userId,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate
+    );
+
+    @Query("""
+        SELECT COALESCE(SUM(r.durationMinutes), 0)
+        FROM ReadingSession r
+        WHERE r.user.id = :userId
+        AND r.readingDate >= :startDate
+        AND r.readingDate <= :endDate
+        """)
+    long sumDurationMinutesByUserIdAndDateRange(
+            @Param("userId") Long userId,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate
+    );
 }
