@@ -12,6 +12,7 @@ import com.ayush.readinghabit.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import com.ayush.readinghabit.exception.BusinessRuleException;
 import com.ayush.readinghabit.entity.BookStatus;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -33,6 +34,7 @@ public class ReadingSessionService {
     }
 
     // Create Reading Session
+    @Transactional
     public ReadingSessionResponseDTO createSession(
             ReadingSessionRequestDTO request) {
 
@@ -207,6 +209,7 @@ public class ReadingSessionService {
     }
 
     // Update Reading Session
+    @Transactional
     public ReadingSessionResponseDTO updateSession(
             Long id,
             ReadingSessionRequestDTO request) {
@@ -328,12 +331,17 @@ public class ReadingSessionService {
         } else if (totalPagesRead > 0) {
 
             book.setStatus(BookStatus.READING);
+
+        } else {
+
+            book.setStatus(BookStatus.TO_READ);
         }
 
         bookRepository.save(book);
     }
 
     // Delete Reading Session
+    @Transactional
     public void deleteSession(Long id) {
 
         ReadingSession existingSession =
@@ -344,7 +352,11 @@ public class ReadingSessionService {
                                 )
                         );
 
+        Book book = existingSession.getBook();
+
         readingSessionRepository.delete(existingSession);
+
+        updateBookStatus(book);
     }
 
     // Find User
@@ -397,4 +409,7 @@ public class ReadingSessionService {
                 session.getBook().getTitle()
         );
     }
+
+
+
 }
