@@ -65,13 +65,10 @@ public class ReadingSessionService {
         session.setUser(user);
         session.setBook(book);
 
-        if (book.getStatus() == BookStatus.TO_READ) {
-            book.setStatus(BookStatus.READING);
-            bookRepository.save(book);
-        }
-
         ReadingSession savedSession =
                 readingSessionRepository.save(session);
+
+        updateBookStatus(book);
 
         return convertToResponseDTO(savedSession);
     }
@@ -228,17 +225,112 @@ public class ReadingSessionService {
 
         validateBookOwnership(book, user);
 
-        existingSession.setReadingDate(request.getReadingDate());
-        existingSession.setDurationMinutes(request.getDurationMinutes());
-        existingSession.setPagesRead(request.getPagesRead());
-        existingSession.setNotes(request.getNotes());
+        validateReadingDate(request.getReadingDate());
+
+        validateBookStatusForUpdate(
+                book,
+                existingSession
+        );
+
+        validatePagesReadPerSession(
+                request.getPagesRead(),
+                book
+        );
+
+        validateTotalPagesAfterUpdate(
+                request.getPagesRead(),
+                existingSession,
+                book
+        );
+
+        existingSession.setReadingDate(
+                request.getReadingDate()
+        );
+
+        existingSession.setDurationMinutes(
+                request.getDurationMinutes()
+        );
+
+        existingSession.setPagesRead(
+                request.getPagesRead()
+        );
+
+        existingSession.setNotes(
+                request.getNotes()
+        );
+
         existingSession.setUser(user);
+
         existingSession.setBook(book);
 
         ReadingSession updatedSession =
                 readingSessionRepository.save(existingSession);
 
+        updateBookStatus(book);
+
         return convertToResponseDTO(updatedSession);
+    }
+
+    private void validateBookStatusForUpdate(
+            Book book,
+            ReadingSession existingSession) {
+
+        if (book.getStatus() == BookStatus.COMPLETED
+                && existingSession.getBook().getId()
+                .equals(book.getId())) {
+
+            throw new BusinessRuleException(
+                    "Cannot update a reading session for a completed book"
+            );
+        }
+    }
+
+    private void validateTotalPagesAfterUpdate(
+            Integer newPagesRead,
+            ReadingSession existingSession,
+            Book book) {
+
+        long totalPagesRead =
+                readingSessionRepository
+                        .sumPagesReadByBookId(book.getId());
+
+        long totalWithoutCurrentSession =
+                totalPagesRead
+                        - existingSession.getPagesRead();
+
+        long totalAfterUpdate =
+                totalWithoutCurrentSession
+                        + newPagesRead;
+
+        if (totalAfterUpdate > book.getTotalPages()) {
+
+            throw new BusinessRuleException(
+                    "Total pages read cannot exceed "
+                            + "the book's total pages. "
+                            + "Pages after update: "
+                            + totalAfterUpdate
+                            + ", total pages: "
+                            + book.getTotalPages()
+            );
+        }
+    }
+
+    private void updateBookStatus(Book book) {
+
+        long totalPagesRead =
+                readingSessionRepository
+                        .sumPagesReadByBookId(book.getId());
+
+        if (totalPagesRead >= book.getTotalPages()) {
+
+            book.setStatus(BookStatus.COMPLETED);
+
+        } else if (totalPagesRead > 0) {
+
+            book.setStatus(BookStatus.READING);
+        }
+
+        bookRepository.save(book);
     }
 
     // Delete Reading Session
