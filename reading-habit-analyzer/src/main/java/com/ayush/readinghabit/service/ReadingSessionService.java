@@ -11,6 +11,7 @@ import com.ayush.readinghabit.repository.ReadingSessionRepository;
 import com.ayush.readinghabit.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import com.ayush.readinghabit.exception.BusinessRuleException;
+import com.ayush.readinghabit.entity.BookStatus;
 
 import java.util.List;
 
@@ -41,6 +42,20 @@ public class ReadingSessionService {
 
         validateBookOwnership(book, user);
 
+        validateReadingDate(request.getReadingDate());
+
+        validateBookStatus(book);
+
+        validatePagesReadPerSession(
+                request.getPagesRead(),
+                book
+        );
+
+        validateTotalPagesAfterSession(
+                request.getPagesRead(),
+                book
+        );
+
         ReadingSession session = new ReadingSession();
 
         session.setReadingDate(request.getReadingDate());
@@ -50,10 +65,75 @@ public class ReadingSessionService {
         session.setUser(user);
         session.setBook(book);
 
+        if (book.getStatus() == BookStatus.TO_READ) {
+            book.setStatus(BookStatus.READING);
+            bookRepository.save(book);
+        }
+
         ReadingSession savedSession =
                 readingSessionRepository.save(session);
 
         return convertToResponseDTO(savedSession);
+    }
+
+    private void validateReadingDate(
+            java.time.LocalDate readingDate) {
+
+        if (readingDate.isAfter(java.time.LocalDate.now())) {
+
+            throw new BusinessRuleException(
+                    "Reading date cannot be in the future"
+            );
+        }
+    }
+
+    private void validateBookStatus(Book book) {
+
+        if (book.getStatus() == BookStatus.COMPLETED) {
+
+            throw new BusinessRuleException(
+                    "Cannot create a reading session for a completed book"
+            );
+        }
+    }
+
+    private void validatePagesReadPerSession(
+            Integer pagesRead,
+            Book book) {
+
+        if (pagesRead > book.getTotalPages()) {
+
+            throw new BusinessRuleException(
+                    "Pages read in a single session cannot exceed "
+                            + "the book's total pages"
+            );
+        }
+    }
+
+    private void validateTotalPagesAfterSession(
+            Integer pagesRead,
+            Book book) {
+
+        long alreadyRead =
+                readingSessionRepository
+                        .sumPagesReadByBookId(book.getId());
+
+        long totalAfterSession =
+                alreadyRead + pagesRead;
+
+        if (totalAfterSession > book.getTotalPages()) {
+
+            throw new BusinessRuleException(
+                    "Total pages read cannot exceed "
+                            + "the book's total pages. "
+                            + "Already read: "
+                            + alreadyRead
+                            + ", attempting to add: "
+                            + pagesRead
+                            + ", total pages: "
+                            + book.getTotalPages()
+            );
+        }
     }
 
     // Get All Reading Sessions
