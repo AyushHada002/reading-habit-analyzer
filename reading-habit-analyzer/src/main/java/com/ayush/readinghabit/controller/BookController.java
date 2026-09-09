@@ -7,6 +7,7 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.ayush.readinghabit.dto.BookProgressDTO;
 
 import java.util.List;
 
@@ -64,6 +65,16 @@ public class BookController {
                 bookService.getBooksByUserId(userId);
 
         return ResponseEntity.ok(books);
+    }
+
+    @GetMapping("/{id}/progress")
+    public ResponseEntity<BookProgressDTO> getBookProgress(
+            @PathVariable Long id) {
+
+        BookProgressDTO progress =
+                bookService.getBookProgress(id);
+
+        return ResponseEntity.ok(progress);
     }
 
     // Update Book

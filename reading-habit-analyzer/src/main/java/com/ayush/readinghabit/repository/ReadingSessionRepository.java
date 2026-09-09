@@ -39,4 +39,11 @@ public interface ReadingSessionRepository
             WHERE r.user.id = :userId
             """)
     long sumDurationMinutesByUserId(@Param("userId") Long userId);
+
+    @Query("""
+        SELECT COALESCE(SUM(r.pagesRead), 0)
+        FROM ReadingSession r
+        WHERE r.book.id = :bookId
+        """)
+    long sumPagesReadByBookId(@Param("bookId") Long bookId);
 }

@@ -8,6 +8,8 @@ import com.ayush.readinghabit.exception.ResourceNotFoundException;
 import com.ayush.readinghabit.repository.BookRepository;
 import com.ayush.readinghabit.repository.UserRepository;
 import org.springframework.stereotype.Service;
+import com.ayush.readinghabit.dto.BookProgressDTO;
+import com.ayush.readinghabit.repository.ReadingSessionRepository;
 
 import java.util.List;
 
@@ -16,13 +18,16 @@ public class BookService {
 
     private final BookRepository bookRepository;
     private final UserRepository userRepository;
+    private final ReadingSessionRepository readingSessionRepository;
 
     public BookService(
             BookRepository bookRepository,
-            UserRepository userRepository) {
+            UserRepository userRepository,
+            ReadingSessionRepository readingSessionRepository) {
 
         this.bookRepository = bookRepository;
         this.userRepository = userRepository;
+        this.readingSessionRepository = readingSessionRepository;
     }
 
     // Create Book
@@ -148,5 +153,41 @@ public class BookService {
                 book.getCompletedDate(),
                 book.getUser().getId()
         );
+    }
+
+    public BookProgressDTO getBookProgress(Long bookId) {
+
+        Book book = bookRepository.findById(bookId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Book not found with id: " + bookId
+                        )
+                );
+
+        long pagesRead = readingSessionRepository
+                .sumPagesReadByBookId(bookId);
+
+        long remainingPages =
+                Math.max(book.getTotalPages() - pagesRead, 0);
+
+        double progressPercentage =
+                ((double) pagesRead / book.getTotalPages()) * 100;
+
+        progressPercentage =
+                Math.min(progressPercentage, 100.0);
+
+        return new BookProgressDTO(
+                book.getId(),
+                book.getTitle(),
+                book.getTotalPages(),
+                pagesRead,
+                remainingPages,
+                roundToTwoDecimals(progressPercentage),
+                book.getStatus()
+        );
+    }
+
+    private double roundToTwoDecimals(double value) {
+        return Math.round(value * 100.0) / 100.0;
     }
 }
