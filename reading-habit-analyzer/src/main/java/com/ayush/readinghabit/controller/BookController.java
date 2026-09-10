@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.ayush.readinghabit.dto.BookProgressDTO;
+import com.ayush.readinghabit.entity.BookStatus;
 
 import java.util.List;
 
@@ -97,5 +98,24 @@ public class BookController {
         bookService.deleteBook(id);
 
         return ResponseEntity.noContent().build();
+    }
+    @GetMapping("/search")
+    public ResponseEntity<List<BookResponseDTO>> searchBooks(
+            @RequestParam(required = false) Long userId,
+            @RequestParam(required = false) String title,
+            @RequestParam(required = false) String author,
+            @RequestParam(required = false) String genre,
+            @RequestParam(required = false) BookStatus status) {
+
+        List<BookResponseDTO> books =
+                bookService.searchBooks(
+                        userId,
+                        title,
+                        author,
+                        genre,
+                        status
+                );
+
+        return ResponseEntity.ok(books);
     }
 }

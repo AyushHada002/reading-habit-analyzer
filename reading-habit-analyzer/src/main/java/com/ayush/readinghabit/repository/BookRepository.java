@@ -16,4 +16,32 @@ public interface BookRepository extends JpaRepository<Book, Long> {
             Long userId,
             BookStatus status
     );
+
+    List<Book> findByTitleContainingIgnoreCase(String title);
+
+    List<Book> findByAuthorContainingIgnoreCase(String author);
+
+    List<Book> findByGenreIgnoreCase(String genre);
+
+    List<Book> findByStatus(BookStatus status);
+
+    List<Book> findByUserIdAndTitleContainingIgnoreCase(
+            Long userId,
+            String title
+    );
+
+    List<Book> findByUserIdAndAuthorContainingIgnoreCase(
+            Long userId,
+            String author
+    );
+
+    List<Book> findByUserIdAndGenreIgnoreCase(
+            Long userId,
+            String genre
+    );
+
+    List<Book> findByUserIdAndStatus(
+            Long userId,
+            BookStatus status
+    );
 }

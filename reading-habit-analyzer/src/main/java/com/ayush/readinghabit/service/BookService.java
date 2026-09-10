@@ -280,4 +280,105 @@ public class BookService {
             );
         }
     }
+
+    public List<BookResponseDTO> searchBooks(
+            Long userId,
+            String title,
+            String author,
+            String genre,
+            BookStatus status) {
+
+        List<Book> books;
+
+        if (userId != null
+                && title != null
+                && !title.isBlank()) {
+
+            books =
+                    bookRepository
+                            .findByUserIdAndTitleContainingIgnoreCase(
+                                    userId,
+                                    title
+                            );
+
+        } else if (userId != null
+                && author != null
+                && !author.isBlank()) {
+
+            books =
+                    bookRepository
+                            .findByUserIdAndAuthorContainingIgnoreCase(
+                                    userId,
+                                    author
+                            );
+
+        } else if (userId != null
+                && genre != null
+                && !genre.isBlank()) {
+
+            books =
+                    bookRepository
+                            .findByUserIdAndGenreIgnoreCase(
+                                    userId,
+                                    genre
+                            );
+
+        } else if (userId != null
+                && status != null) {
+
+            books =
+                    bookRepository
+                            .findByUserIdAndStatus(
+                                    userId,
+                                    status
+                            );
+
+        } else if (title != null
+                && !title.isBlank()) {
+
+            books =
+                    bookRepository
+                            .findByTitleContainingIgnoreCase(title);
+
+        } else if (author != null
+                && !author.isBlank()) {
+
+            books =
+                    bookRepository
+                            .findByAuthorContainingIgnoreCase(author);
+
+        } else if (genre != null
+                && !genre.isBlank()) {
+
+            books =
+                    bookRepository
+                            .findByGenreIgnoreCase(genre);
+
+        } else if (status != null) {
+
+            books =
+                    bookRepository
+                            .findByStatus(status);
+
+        } else if (userId != null) {
+
+            if (!userRepository.existsById(userId)) {
+                throw new ResourceNotFoundException(
+                        "User not found with id: " + userId
+                );
+            }
+
+            books =
+                    bookRepository.findByUserId(userId);
+
+        } else {
+
+            books =
+                    bookRepository.findAll();
+        }
+
+        return books.stream()
+                .map(this::convertToResponseDTO)
+                .toList();
+    }
 }
