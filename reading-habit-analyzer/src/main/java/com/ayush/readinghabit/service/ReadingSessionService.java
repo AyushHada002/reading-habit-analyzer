@@ -22,6 +22,18 @@ import org.springframework.data.jpa.domain.Specification;
 import com.ayush.readinghabit.entity.ReadingSession;
 import com.ayush.readinghabit.exception.BusinessRuleException;
 import com.ayush.readinghabit.repository.ReadingSessionSpecification;
+import com.ayush.readinghabit.dto.PageResponseDTO;
+import com.ayush.readinghabit.entity.ReadingSession;
+import com.ayush.readinghabit.exception.BusinessRuleException;
+import com.ayush.readinghabit.repository.ReadingSessionSpecification;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
+
+import java.time.LocalDate;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -723,5 +735,114 @@ public class ReadingSessionService {
                     "Minimum duration cannot be greater than maximum duration"
             );
         }
+    }
+
+    public PageResponseDTO<ReadingSessionResponseDTO> searchSessionsPaginated(
+            Long userId,
+            Long bookId,
+            LocalDate startDate,
+            LocalDate endDate,
+            Integer minPages,
+            Integer maxPages,
+            Integer minDuration,
+            Integer maxDuration,
+            int page,
+            int size,
+            String sortBy,
+            String direction) {
+
+        validateSearchFilters(
+                startDate,
+                endDate,
+                minPages,
+                maxPages,
+                minDuration,
+                maxDuration
+        );
+
+        validatePagination(page, size);
+
+        String validatedSortBy = validateSortField(sortBy);
+
+        Sort.Direction sortDirection;
+
+        try {
+            sortDirection = Sort.Direction.fromString(direction);
+        } catch (IllegalArgumentException e) {
+            throw new BusinessRuleException(
+                    "Direction must be either 'asc' or 'desc'"
+            );
+        }
+
+        Specification<ReadingSession> specification =
+                (root, query, criteriaBuilder) -> null;
+
+        if (userId != null) {
+            specification = specification.and(
+                    ReadingSessionSpecification.hasUserId(userId)
+            );
+        }
+
+        if (bookId != null) {
+            specification = specification.and(
+                    ReadingSessionSpecification.hasBookId(bookId)
+            );
+        }
+
+        if (startDate != null) {
+            specification = specification.and(
+                    ReadingSessionSpecification
+                            .readingDateGreaterThanOrEqual(startDate)
+            );
+        }
+
+        if (endDate != null) {
+            specification = specification.and(
+                    ReadingSessionSpecification
+                            .readingDateLessThanOrEqual(endDate)
+            );
+        }
+
+        if (minPages != null) {
+            specification = specification.and(
+                    ReadingSessionSpecification
+                            .pagesGreaterThanOrEqual(minPages)
+            );
+        }
+
+        if (maxPages != null) {
+            specification = specification.and(
+                    ReadingSessionSpecification
+                            .pagesLessThanOrEqual(maxPages)
+            );
+        }
+
+        if (minDuration != null) {
+            specification = specification.and(
+                    ReadingSessionSpecification
+                            .durationGreaterThanOrEqual(minDuration)
+            );
+        }
+
+        if (maxDuration != null) {
+            specification = specification.and(
+                    ReadingSessionSpecification
+                            .durationLessThanOrEqual(maxDuration)
+            );
+        }
+
+        Pageable pageable = PageRequest.of(
+                page,
+                size,
+                Sort.by(sortDirection, validatedSortBy)
+        );
+
+        Page<ReadingSession> sessionPage =
+                readingSessionRepository.findAll(
+                        specification,
+                        pageable
+                );
+
+        return convertToPageResponse(sessionPage);
     }
 }

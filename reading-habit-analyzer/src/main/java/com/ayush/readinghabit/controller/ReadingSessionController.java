@@ -73,6 +73,40 @@ public class ReadingSessionController {
         );
     }
 
+    @GetMapping("/search/paginated")
+    public ResponseEntity<PageResponseDTO<ReadingSessionResponseDTO>>
+    searchSessionsPaginated(
+            @RequestParam(required = false) Long userId,
+            @RequestParam(required = false) Long bookId,
+            @RequestParam(required = false) LocalDate startDate,
+            @RequestParam(required = false) LocalDate endDate,
+            @RequestParam(required = false) Integer minPages,
+            @RequestParam(required = false) Integer maxPages,
+            @RequestParam(required = false) Integer minDuration,
+            @RequestParam(required = false) Integer maxDuration,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "readingDate") String sortBy,
+            @RequestParam(defaultValue = "desc") String direction) {
+
+        return ResponseEntity.ok(
+                readingSessionService.searchSessionsPaginated(
+                        userId,
+                        bookId,
+                        startDate,
+                        endDate,
+                        minPages,
+                        maxPages,
+                        minDuration,
+                        maxDuration,
+                        page,
+                        size,
+                        sortBy,
+                        direction
+                )
+        );
+    }
+
     // Get Reading Session By ID
     @GetMapping("/{id}")
     public ResponseEntity<ReadingSessionResponseDTO> getSessionById(
