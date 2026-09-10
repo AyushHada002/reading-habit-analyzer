@@ -12,6 +12,8 @@ import com.ayush.readinghabit.dto.BookProgressDTO;
 import com.ayush.readinghabit.repository.ReadingSessionRepository;
 import com.ayush.readinghabit.entity.BookStatus;
 import com.ayush.readinghabit.exception.BusinessRuleException;
+import com.ayush.readinghabit.repository.BookSpecification;
+import org.springframework.data.jpa.domain.Specification;
 
 import java.util.List;
 
@@ -288,79 +290,10 @@ public class BookService {
             String genre,
             BookStatus status) {
 
-        List<Book> books;
+        Specification<Book> specification =
+                Specification.unrestricted();
 
-        if (userId != null
-                && title != null
-                && !title.isBlank()) {
-
-            books =
-                    bookRepository
-                            .findByUserIdAndTitleContainingIgnoreCase(
-                                    userId,
-                                    title
-                            );
-
-        } else if (userId != null
-                && author != null
-                && !author.isBlank()) {
-
-            books =
-                    bookRepository
-                            .findByUserIdAndAuthorContainingIgnoreCase(
-                                    userId,
-                                    author
-                            );
-
-        } else if (userId != null
-                && genre != null
-                && !genre.isBlank()) {
-
-            books =
-                    bookRepository
-                            .findByUserIdAndGenreIgnoreCase(
-                                    userId,
-                                    genre
-                            );
-
-        } else if (userId != null
-                && status != null) {
-
-            books =
-                    bookRepository
-                            .findByUserIdAndStatus(
-                                    userId,
-                                    status
-                            );
-
-        } else if (title != null
-                && !title.isBlank()) {
-
-            books =
-                    bookRepository
-                            .findByTitleContainingIgnoreCase(title);
-
-        } else if (author != null
-                && !author.isBlank()) {
-
-            books =
-                    bookRepository
-                            .findByAuthorContainingIgnoreCase(author);
-
-        } else if (genre != null
-                && !genre.isBlank()) {
-
-            books =
-                    bookRepository
-                            .findByGenreIgnoreCase(genre);
-
-        } else if (status != null) {
-
-            books =
-                    bookRepository
-                            .findByStatus(status);
-
-        } else if (userId != null) {
+        if (userId != null) {
 
             if (!userRepository.existsById(userId)) {
                 throw new ResourceNotFoundException(
@@ -368,16 +301,47 @@ public class BookService {
                 );
             }
 
-            books =
-                    bookRepository.findByUserId(userId);
-
-        } else {
-
-            books =
-                    bookRepository.findAll();
+            specification =
+                    specification.and(
+                            BookSpecification.hasUserId(userId)
+                    );
         }
 
-        return books.stream()
+        if (title != null && !title.isBlank()) {
+
+            specification =
+                    specification.and(
+                            BookSpecification.titleContains(title)
+                    );
+        }
+
+        if (author != null && !author.isBlank()) {
+
+            specification =
+                    specification.and(
+                            BookSpecification.authorContains(author)
+                    );
+        }
+
+        if (genre != null && !genre.isBlank()) {
+
+            specification =
+                    specification.and(
+                            BookSpecification.hasGenre(genre)
+                    );
+        }
+
+        if (status != null) {
+
+            specification =
+                    specification.and(
+                            BookSpecification.hasStatus(status)
+                    );
+        }
+
+        return bookRepository
+                .findAll(specification)
+                .stream()
                 .map(this::convertToResponseDTO)
                 .toList();
     }
