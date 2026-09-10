@@ -42,18 +42,15 @@ public class BookService {
                         )
                 );
 
-        validateBookDates(request);
-        validateBookDatesAreNotFuture(request);
-
         Book book = new Book();
 
         book.setTitle(request.getTitle());
         book.setAuthor(request.getAuthor());
         book.setGenre(request.getGenre());
         book.setTotalPages(request.getTotalPages());
-        book.setStatus(request.getStatus());
-        book.setStartedDate(request.getStartedDate());
-        book.setCompletedDate(request.getCompletedDate());
+        book.setStatus(BookStatus.TO_READ);
+        book.setStartedDate(null);
+        book.setCompletedDate(null);
         book.setUser(user);
 
         Book savedBook = bookRepository.save(book);
@@ -117,17 +114,14 @@ public class BookService {
                         )
                 );
 
-        validateBookDates(request);
-        validateBookDatesAreNotFuture(request);
+        validateTotalPagesUpdate(
+                existingBook,
+                request.getTotalPages()
+        );
 
-        existingBook.setTitle(request.getTitle());
-        existingBook.setAuthor(request.getAuthor());
-        existingBook.setGenre(request.getGenre());
-        existingBook.setTotalPages(request.getTotalPages());
         existingBook.setStatus(request.getStatus());
         existingBook.setStartedDate(request.getStartedDate());
         existingBook.setCompletedDate(request.getCompletedDate());
-        existingBook.setUser(user);
 
         Book updatedBook = bookRepository.save(existingBook);
 
@@ -199,61 +193,6 @@ public class BookService {
         return Math.round(value * 100.0) / 100.0;
     }
 
-    private void validateBookDates(BookRequestDTO request) {
-
-        if (request.getStatus() == BookStatus.TO_READ) {
-
-            if (request.getCompletedDate() != null) {
-
-                throw new BusinessRuleException(
-                        "A TO_READ book cannot have a completed date"
-                );
-            }
-        }
-
-        if (request.getStatus() == BookStatus.READING) {
-
-            if (request.getStartedDate() == null) {
-
-                throw new BusinessRuleException(
-                        "A READING book must have a started date"
-                );
-            }
-
-            if (request.getCompletedDate() != null) {
-
-                throw new BusinessRuleException(
-                        "A READING book cannot have a completed date"
-                );
-            }
-        }
-
-        if (request.getStatus() == BookStatus.COMPLETED) {
-
-            if (request.getStartedDate() == null) {
-
-                throw new BusinessRuleException(
-                        "A COMPLETED book must have a started date"
-                );
-            }
-
-            if (request.getCompletedDate() == null) {
-
-                throw new BusinessRuleException(
-                        "A COMPLETED book must have a completed date"
-                );
-            }
-
-            if (request.getCompletedDate()
-                    .isBefore(request.getStartedDate())) {
-
-                throw new BusinessRuleException(
-                        "Completed date cannot be before started date"
-                );
-            }
-        }
-    }
-
     private void validateBookDatesAreNotFuture(
             BookRequestDTO request) {
 
@@ -273,6 +212,71 @@ public class BookService {
 
             throw new BusinessRuleException(
                     "Completed date cannot be in the future"
+            );
+        }
+    }
+
+    private void synchronizeBookStatus(Book book) {
+
+        long pagesRead =
+                readingSessionRepository
+                        .sumPagesReadByBookId(book.getId());
+
+        if (pagesRead <= 0) {
+
+            book.setStatus(BookStatus.TO_READ);
+            book.setStartedDate(null);
+            book.setCompletedDate(null);
+
+        } else if (pagesRead < book.getTotalPages()) {
+
+            book.setStatus(BookStatus.READING);
+
+            if (book.getStartedDate() == null) {
+                book.setStartedDate(
+                        java.time.LocalDate.now()
+                );
+            }
+
+            book.setCompletedDate(null);
+
+        } else {
+
+            book.setStatus(BookStatus.COMPLETED);
+
+            if (book.getStartedDate() == null) {
+                book.setStartedDate(
+                        java.time.LocalDate.now()
+                );
+            }
+
+            if (book.getCompletedDate() == null) {
+                book.setCompletedDate(
+                        java.time.LocalDate.now()
+                );
+            }
+        }
+
+        bookRepository.save(book);
+    }
+
+    private void validateTotalPagesUpdate(
+            Book book,
+            Integer newTotalPages) {
+
+        long pagesRead =
+                readingSessionRepository
+                        .sumPagesReadByBookId(book.getId());
+
+        if (newTotalPages < pagesRead) {
+
+            throw new BusinessRuleException(
+                    "Total pages cannot be less than "
+                            + "pages already read. "
+                            + "Pages read: "
+                            + pagesRead
+                            + ", new total pages: "
+                            + newTotalPages
             );
         }
     }

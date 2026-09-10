@@ -22,7 +22,6 @@ public class BookRequestDTO {
     @Positive(message = "Total pages must be greater than 0")
     private Integer totalPages;
 
-    @NotNull(message = "Status is required")
     private BookStatus status;
 
     private LocalDate startedDate;
