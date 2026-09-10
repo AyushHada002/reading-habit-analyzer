@@ -10,6 +10,8 @@ import com.ayush.readinghabit.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import com.ayush.readinghabit.dto.BookProgressDTO;
 import com.ayush.readinghabit.repository.ReadingSessionRepository;
+import com.ayush.readinghabit.entity.BookStatus;
+import com.ayush.readinghabit.exception.BusinessRuleException;
 
 import java.util.List;
 
@@ -39,6 +41,9 @@ public class BookService {
                                 "User not found with id: " + request.getUserId()
                         )
                 );
+
+        validateBookDates(request);
+        validateBookDatesAreNotFuture(request);
 
         Book book = new Book();
 
@@ -111,6 +116,9 @@ public class BookService {
                                 "User not found with id: " + request.getUserId()
                         )
                 );
+
+        validateBookDates(request);
+        validateBookDatesAreNotFuture(request);
 
         existingBook.setTitle(request.getTitle());
         existingBook.setAuthor(request.getAuthor());
@@ -189,5 +197,83 @@ public class BookService {
 
     private double roundToTwoDecimals(double value) {
         return Math.round(value * 100.0) / 100.0;
+    }
+
+    private void validateBookDates(BookRequestDTO request) {
+
+        if (request.getStatus() == BookStatus.TO_READ) {
+
+            if (request.getCompletedDate() != null) {
+
+                throw new BusinessRuleException(
+                        "A TO_READ book cannot have a completed date"
+                );
+            }
+        }
+
+        if (request.getStatus() == BookStatus.READING) {
+
+            if (request.getStartedDate() == null) {
+
+                throw new BusinessRuleException(
+                        "A READING book must have a started date"
+                );
+            }
+
+            if (request.getCompletedDate() != null) {
+
+                throw new BusinessRuleException(
+                        "A READING book cannot have a completed date"
+                );
+            }
+        }
+
+        if (request.getStatus() == BookStatus.COMPLETED) {
+
+            if (request.getStartedDate() == null) {
+
+                throw new BusinessRuleException(
+                        "A COMPLETED book must have a started date"
+                );
+            }
+
+            if (request.getCompletedDate() == null) {
+
+                throw new BusinessRuleException(
+                        "A COMPLETED book must have a completed date"
+                );
+            }
+
+            if (request.getCompletedDate()
+                    .isBefore(request.getStartedDate())) {
+
+                throw new BusinessRuleException(
+                        "Completed date cannot be before started date"
+                );
+            }
+        }
+    }
+
+    private void validateBookDatesAreNotFuture(
+            BookRequestDTO request) {
+
+        java.time.LocalDate today =
+                java.time.LocalDate.now();
+
+        if (request.getStartedDate() != null
+                && request.getStartedDate().isAfter(today)) {
+
+            throw new BusinessRuleException(
+                    "Started date cannot be in the future"
+            );
+        }
+
+        if (request.getCompletedDate() != null
+                && request.getCompletedDate().isAfter(today)) {
+
+            throw new BusinessRuleException(
+                    "Completed date cannot be in the future"
+            );
+        }
     }
 }

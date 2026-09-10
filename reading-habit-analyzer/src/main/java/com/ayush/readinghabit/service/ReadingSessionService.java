@@ -328,13 +328,36 @@ public class ReadingSessionService {
 
             book.setStatus(BookStatus.COMPLETED);
 
+            if (book.getStartedDate() == null) {
+                book.setStartedDate(
+                        java.time.LocalDate.now()
+                );
+            }
+
+            if (book.getCompletedDate() == null) {
+                book.setCompletedDate(
+                        java.time.LocalDate.now()
+                );
+            }
+
         } else if (totalPagesRead > 0) {
 
             book.setStatus(BookStatus.READING);
 
+            if (book.getStartedDate() == null) {
+                book.setStartedDate(
+                        java.time.LocalDate.now()
+                );
+            }
+
+            book.setCompletedDate(null);
+
         } else {
 
             book.setStatus(BookStatus.TO_READ);
+
+            book.setStartedDate(null);
+            book.setCompletedDate(null);
         }
 
         bookRepository.save(book);
