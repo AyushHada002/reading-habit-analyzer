@@ -7,6 +7,7 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.ayush.readinghabit.dto.PageResponseDTO;
 
 import java.util.List;
 
@@ -115,5 +116,45 @@ public class ReadingSessionController {
         readingSessionService.deleteSession(id);
 
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/user/{userId}/paginated")
+    public ResponseEntity<PageResponseDTO<ReadingSessionResponseDTO>>
+    getSessionsByUserIdPaginated(
+            @PathVariable Long userId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "readingDate") String sortBy,
+            @RequestParam(defaultValue = "desc") String direction) {
+
+        return ResponseEntity.ok(
+                readingSessionService.getSessionsByUserIdPaginated(
+                        userId,
+                        page,
+                        size,
+                        sortBy,
+                        direction
+                )
+        );
+    }
+
+    @GetMapping("/book/{bookId}/paginated")
+    public ResponseEntity<PageResponseDTO<ReadingSessionResponseDTO>>
+    getSessionsByBookIdPaginated(
+            @PathVariable Long bookId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "readingDate") String sortBy,
+            @RequestParam(defaultValue = "desc") String direction) {
+
+        return ResponseEntity.ok(
+                readingSessionService.getSessionsByBookIdPaginated(
+                        bookId,
+                        page,
+                        size,
+                        sortBy,
+                        direction
+                )
+        );
     }
 }

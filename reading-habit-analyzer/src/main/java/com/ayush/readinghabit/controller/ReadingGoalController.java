@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.ayush.readinghabit.dto.ReadingGoalProgressDTO;
+import com.ayush.readinghabit.dto.PageResponseDTO;
 
 import java.util.List;
 
@@ -44,6 +45,26 @@ public class ReadingGoalController {
                 readingGoalService.getGoalsByUserId(userId);
 
         return ResponseEntity.ok(goals);
+    }
+
+    @GetMapping("/user/{userId}/paginated")
+    public ResponseEntity<PageResponseDTO<ReadingGoalResponseDTO>>
+    getGoalsByUserIdPaginated(
+            @PathVariable Long userId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "month") String sortBy,
+            @RequestParam(defaultValue = "desc") String direction) {
+
+        return ResponseEntity.ok(
+                readingGoalService.getGoalsByUserIdPaginated(
+                        userId,
+                        page,
+                        size,
+                        sortBy,
+                        direction
+                )
+        );
     }
 
     @GetMapping("/{id}")
@@ -85,4 +106,6 @@ public class ReadingGoalController {
 
         return ResponseEntity.noContent().build();
     }
+
+
 }

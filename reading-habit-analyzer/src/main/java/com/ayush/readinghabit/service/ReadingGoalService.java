@@ -11,6 +11,12 @@ import com.ayush.readinghabit.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import com.ayush.readinghabit.dto.ReadingGoalProgressDTO;
 import com.ayush.readinghabit.repository.ReadingSessionRepository;
+import com.ayush.readinghabit.dto.PageResponseDTO;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import com.ayush.readinghabit.exception.BusinessRuleException;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -264,5 +270,95 @@ public class ReadingGoalService {
     private double roundToTwoDecimals(double value) {
 
         return Math.round(value * 100.0) / 100.0;
+    }
+
+    public PageResponseDTO<ReadingGoalResponseDTO> getGoalsByUserIdPaginated(
+            Long userId,
+            int page,
+            int size,
+            String sortBy,
+            String direction) {
+
+        if (!userRepository.existsById(userId)) {
+            throw new ResourceNotFoundException(
+                    "User not found with id: " + userId
+            );
+        }
+
+        validatePagination(page, size);
+
+        String validatedSortBy = validateSortField(sortBy);
+
+        Sort.Direction sortDirection;
+
+        try {
+            sortDirection = Sort.Direction.fromString(direction);
+        } catch (IllegalArgumentException e) {
+            throw new BusinessRuleException(
+                    "Direction must be either 'asc' or 'desc'"
+            );
+        }
+
+        Pageable pageable = PageRequest.of(
+                page,
+                size,
+                Sort.by(sortDirection, validatedSortBy)
+        );
+
+        Page<ReadingGoal> goalPage =
+                readingGoalRepository.findByUserId(
+                        userId,
+                        pageable
+                );
+
+        List<ReadingGoalResponseDTO> content =
+                goalPage.getContent()
+                        .stream()
+                        .map(this::convertToResponseDTO)
+                        .toList();
+
+        return new PageResponseDTO<>(
+                content,
+                goalPage.getNumber(),
+                goalPage.getSize(),
+                goalPage.getTotalElements(),
+                goalPage.getTotalPages(),
+                goalPage.isFirst(),
+                goalPage.isLast()
+        );
+    }
+
+    private void validatePagination(int page, int size) {
+
+        if (page < 0) {
+            throw new BusinessRuleException(
+                    "Page number cannot be negative"
+            );
+        }
+
+        if (size < 1 || size > 100) {
+            throw new BusinessRuleException(
+                    "Page size must be between 1 and 100"
+            );
+        }
+    }
+
+    private String validateSortField(String sortBy) {
+
+        List<String> allowedFields = List.of(
+                "id",
+                "month",
+                "targetPages",
+                "targetMinutes"
+        );
+
+        if (!allowedFields.contains(sortBy)) {
+            throw new BusinessRuleException(
+                    "Invalid sort field. Allowed fields: "
+                            + allowedFields
+            );
+        }
+
+        return sortBy;
     }
 }

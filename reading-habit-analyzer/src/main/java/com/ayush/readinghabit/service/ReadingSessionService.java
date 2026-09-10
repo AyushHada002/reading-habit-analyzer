@@ -13,6 +13,11 @@ import org.springframework.stereotype.Service;
 import com.ayush.readinghabit.exception.BusinessRuleException;
 import com.ayush.readinghabit.entity.BookStatus;
 import org.springframework.transaction.annotation.Transactional;
+import com.ayush.readinghabit.dto.PageResponseDTO;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 import java.util.List;
 
@@ -433,6 +438,142 @@ public class ReadingSessionService {
         );
     }
 
+    public PageResponseDTO<ReadingSessionResponseDTO> getSessionsByUserIdPaginated(
+            Long userId,
+            int page,
+            int size,
+            String sortBy,
+            String direction) {
 
+        if (!userRepository.existsById(userId)) {
+            throw new ResourceNotFoundException(
+                    "User not found with id: " + userId
+            );
+        }
+
+        validatePagination(page, size);
+
+        String validatedSortBy = validateSortField(sortBy);
+
+        Sort.Direction sortDirection;
+
+        try {
+            sortDirection = Sort.Direction.fromString(direction);
+        } catch (IllegalArgumentException e) {
+            throw new BusinessRuleException(
+                    "Direction must be either 'asc' or 'desc'"
+            );
+        }
+
+        Pageable pageable = PageRequest.of(
+                page,
+                size,
+                Sort.by(sortDirection, validatedSortBy)
+        );
+
+        Page<ReadingSession> sessionPage =
+                readingSessionRepository.findByUserId(
+                        userId,
+                        pageable
+                );
+
+        return convertToPageResponse(sessionPage);
+    }
+
+    public PageResponseDTO<ReadingSessionResponseDTO> getSessionsByBookIdPaginated(
+            Long bookId,
+            int page,
+            int size,
+            String sortBy,
+            String direction) {
+
+        if (!bookRepository.existsById(bookId)) {
+            throw new ResourceNotFoundException(
+                    "Book not found with id: " + bookId
+            );
+        }
+
+        validatePagination(page, size);
+
+        String validatedSortBy = validateSortField(sortBy);
+
+        Sort.Direction sortDirection;
+
+        try {
+            sortDirection = Sort.Direction.fromString(direction);
+        } catch (IllegalArgumentException e) {
+            throw new BusinessRuleException(
+                    "Direction must be either 'asc' or 'desc'"
+            );
+        }
+
+        Pageable pageable = PageRequest.of(
+                page,
+                size,
+                Sort.by(sortDirection, validatedSortBy)
+        );
+
+        Page<ReadingSession> sessionPage =
+                readingSessionRepository.findByBookId(
+                        bookId,
+                        pageable
+                );
+
+        return convertToPageResponse(sessionPage);
+    }
+
+    private void validatePagination(int page, int size) {
+
+        if (page < 0) {
+            throw new BusinessRuleException(
+                    "Page number cannot be negative"
+            );
+        }
+
+        if (size < 1 || size > 100) {
+            throw new BusinessRuleException(
+                    "Page size must be between 1 and 100"
+            );
+        }
+    }
+
+    private String validateSortField(String sortBy) {
+
+        List<String> allowedFields = List.of(
+                "id",
+                "readingDate",
+                "durationMinutes",
+                "pagesRead"
+        );
+
+        if (!allowedFields.contains(sortBy)) {
+            throw new BusinessRuleException(
+                    "Invalid sort field. Allowed fields: "
+                            + allowedFields
+            );
+        }
+
+        return sortBy;
+    }
+
+    private PageResponseDTO<ReadingSessionResponseDTO> convertToPageResponse(
+            Page<ReadingSession> sessionPage) {
+
+        List<ReadingSessionResponseDTO> content =
+                sessionPage.getContent()
+                        .stream()
+                        .map(this::convertToResponseDTO)
+                        .toList();
+
+        return new PageResponseDTO<>(
+                content,
+                sessionPage.getNumber(),
+                sessionPage.getSize(),
+                sessionPage.getTotalElements(),
+                sessionPage.getTotalPages(),
+                sessionPage.isFirst(),
+                sessionPage.isLast()
+        );
+    }
 
 }
