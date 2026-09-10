@@ -18,7 +18,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
+import com.ayush.readinghabit.entity.ReadingSession;
+import com.ayush.readinghabit.exception.BusinessRuleException;
+import com.ayush.readinghabit.repository.ReadingSessionSpecification;
 
+import java.time.LocalDate;
+import java.util.List;
 import java.util.List;
 
 @Service
@@ -576,4 +582,146 @@ public class ReadingSessionService {
         );
     }
 
+    public List<ReadingSessionResponseDTO> searchSessions(
+            Long userId,
+            Long bookId,
+            LocalDate startDate,
+            LocalDate endDate,
+            Integer minPages,
+            Integer maxPages,
+            Integer minDuration,
+            Integer maxDuration) {
+
+        validateSearchFilters(
+                startDate,
+                endDate,
+                minPages,
+                maxPages,
+                minDuration,
+                maxDuration
+        );
+
+        Specification<ReadingSession> specification =
+                (root, query, criteriaBuilder) -> null;
+
+        if (userId != null) {
+            specification = specification.and(
+                    ReadingSessionSpecification.hasUserId(userId)
+            );
+        }
+
+        if (bookId != null) {
+            specification = specification.and(
+                    ReadingSessionSpecification.hasBookId(bookId)
+            );
+        }
+
+        if (startDate != null) {
+            specification = specification.and(
+                    ReadingSessionSpecification
+                            .readingDateGreaterThanOrEqual(startDate)
+            );
+        }
+
+        if (endDate != null) {
+            specification = specification.and(
+                    ReadingSessionSpecification
+                            .readingDateLessThanOrEqual(endDate)
+            );
+        }
+
+        if (minPages != null) {
+            specification = specification.and(
+                    ReadingSessionSpecification
+                            .pagesGreaterThanOrEqual(minPages)
+            );
+        }
+
+        if (maxPages != null) {
+            specification = specification.and(
+                    ReadingSessionSpecification
+                            .pagesLessThanOrEqual(maxPages)
+            );
+        }
+
+        if (minDuration != null) {
+            specification = specification.and(
+                    ReadingSessionSpecification
+                            .durationGreaterThanOrEqual(minDuration)
+            );
+        }
+
+        if (maxDuration != null) {
+            specification = specification.and(
+                    ReadingSessionSpecification
+                            .durationLessThanOrEqual(maxDuration)
+            );
+        }
+
+        return readingSessionRepository
+                .findAll(specification)
+                .stream()
+                .map(this::convertToResponseDTO)
+                .toList();
+    }
+
+    private void validateSearchFilters(
+            LocalDate startDate,
+            LocalDate endDate,
+            Integer minPages,
+            Integer maxPages,
+            Integer minDuration,
+            Integer maxDuration) {
+
+        if (startDate != null
+                && endDate != null
+                && startDate.isAfter(endDate)) {
+
+            throw new BusinessRuleException(
+                    "Start date cannot be after end date"
+            );
+        }
+
+        if (minPages != null && minPages < 0) {
+            throw new BusinessRuleException(
+                    "Minimum pages cannot be negative"
+            );
+        }
+
+        if (maxPages != null && maxPages < 0) {
+            throw new BusinessRuleException(
+                    "Maximum pages cannot be negative"
+            );
+        }
+
+        if (minPages != null
+                && maxPages != null
+                && minPages > maxPages) {
+
+            throw new BusinessRuleException(
+                    "Minimum pages cannot be greater than maximum pages"
+            );
+        }
+
+        if (minDuration != null && minDuration < 0) {
+            throw new BusinessRuleException(
+                    "Minimum duration cannot be negative"
+            );
+        }
+
+        if (maxDuration != null && maxDuration < 0) {
+            throw new BusinessRuleException(
+                    "Maximum duration cannot be negative"
+            );
+        }
+
+        if (minDuration != null
+                && maxDuration != null
+                && minDuration > maxDuration) {
+
+            throw new BusinessRuleException(
+                    "Minimum duration cannot be greater than maximum duration"
+            );
+        }
+    }
 }

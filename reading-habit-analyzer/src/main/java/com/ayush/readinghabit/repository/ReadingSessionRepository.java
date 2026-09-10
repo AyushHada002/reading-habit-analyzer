@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -13,7 +14,8 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 
 public interface ReadingSessionRepository
-        extends JpaRepository<ReadingSession, Long> {
+        extends JpaRepository<ReadingSession, Long>,
+        JpaSpecificationExecutor<ReadingSession> {
 
     List<ReadingSession> findByUserId(Long userId);
 

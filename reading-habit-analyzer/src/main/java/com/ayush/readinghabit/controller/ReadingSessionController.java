@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.ayush.readinghabit.dto.PageResponseDTO;
+import java.time.LocalDate;
 
 import java.util.List;
 
@@ -45,6 +46,31 @@ public class ReadingSessionController {
                 readingSessionService.getAllSessions();
 
         return ResponseEntity.ok(sessions);
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<List<ReadingSessionResponseDTO>> searchSessions(
+            @RequestParam(required = false) Long userId,
+            @RequestParam(required = false) Long bookId,
+            @RequestParam(required = false) LocalDate startDate,
+            @RequestParam(required = false) LocalDate endDate,
+            @RequestParam(required = false) Integer minPages,
+            @RequestParam(required = false) Integer maxPages,
+            @RequestParam(required = false) Integer minDuration,
+            @RequestParam(required = false) Integer maxDuration) {
+
+        return ResponseEntity.ok(
+                readingSessionService.searchSessions(
+                        userId,
+                        bookId,
+                        startDate,
+                        endDate,
+                        minPages,
+                        maxPages,
+                        minDuration,
+                        maxDuration
+                )
+        );
     }
 
     // Get Reading Session By ID
@@ -157,4 +183,6 @@ public class ReadingSessionController {
                 )
         );
     }
+
+
 }
