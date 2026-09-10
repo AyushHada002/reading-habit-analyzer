@@ -14,6 +14,11 @@ import com.ayush.readinghabit.entity.BookStatus;
 import com.ayush.readinghabit.exception.BusinessRuleException;
 import com.ayush.readinghabit.repository.BookSpecification;
 import org.springframework.data.jpa.domain.Specification;
+import com.ayush.readinghabit.dto.PageResponseDTO;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 import java.util.List;
 
@@ -344,5 +349,141 @@ public class BookService {
                 .stream()
                 .map(this::convertToResponseDTO)
                 .toList();
+    }
+
+    public PageResponseDTO<BookResponseDTO> searchBooksPaginated(
+            Long userId,
+            String title,
+            String author,
+            String genre,
+            BookStatus status,
+            int page,
+            int size,
+            String sortBy,
+            String direction) {
+
+        if (page < 0) {
+            throw new BusinessRuleException(
+                    "Page number cannot be negative"
+            );
+        }
+
+        if (size < 1 || size > 100) {
+            throw new BusinessRuleException(
+                    "Page size must be between 1 and 100"
+            );
+        }
+
+        if (sortBy == null || sortBy.isBlank()) {
+            sortBy = "id";
+        }
+
+        List<String> allowedSortFields = List.of(
+                "id",
+                "title",
+                "author",
+                "genre",
+                "totalPages",
+                "status",
+                "startedDate",
+                "completedDate"
+        );
+
+        if (!allowedSortFields.contains(sortBy)) {
+
+            throw new BusinessRuleException(
+                    "Invalid sort field: " + sortBy
+            );
+        }
+
+        Sort.Direction sortDirection;
+
+        try {
+            sortDirection =
+                    Sort.Direction.fromString(direction);
+        } catch (IllegalArgumentException exception) {
+
+            throw new BusinessRuleException(
+                    "Sort direction must be 'asc' or 'desc'"
+            );
+        }
+
+        Pageable pageable =
+                PageRequest.of(
+                        page,
+                        size,
+                        Sort.by(sortDirection, sortBy)
+                );
+
+        Specification<Book> specification =
+                Specification.unrestricted();
+
+        if (userId != null) {
+
+            if (!userRepository.existsById(userId)) {
+                throw new ResourceNotFoundException(
+                        "User not found with id: " + userId
+                );
+            }
+
+            specification =
+                    specification.and(
+                            BookSpecification.hasUserId(userId)
+                    );
+        }
+
+        if (title != null && !title.isBlank()) {
+
+            specification =
+                    specification.and(
+                            BookSpecification.titleContains(title)
+                    );
+        }
+
+        if (author != null && !author.isBlank()) {
+
+            specification =
+                    specification.and(
+                            BookSpecification.authorContains(author)
+                    );
+        }
+
+        if (genre != null && !genre.isBlank()) {
+
+            specification =
+                    specification.and(
+                            BookSpecification.hasGenre(genre)
+                    );
+        }
+
+        if (status != null) {
+
+            specification =
+                    specification.and(
+                            BookSpecification.hasStatus(status)
+                    );
+        }
+
+        Page<Book> bookPage =
+                bookRepository.findAll(
+                        specification,
+                        pageable
+                );
+
+        List<BookResponseDTO> content =
+                bookPage.getContent()
+                        .stream()
+                        .map(this::convertToResponseDTO)
+                        .toList();
+
+        return new PageResponseDTO<>(
+                content,
+                bookPage.getNumber(),
+                bookPage.getSize(),
+                bookPage.getTotalElements(),
+                bookPage.getTotalPages(),
+                bookPage.isFirst(),
+                bookPage.isLast()
+        );
     }
 }

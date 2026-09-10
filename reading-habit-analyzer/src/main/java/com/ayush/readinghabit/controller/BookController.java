@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.ayush.readinghabit.dto.BookProgressDTO;
 import com.ayush.readinghabit.entity.BookStatus;
+import com.ayush.readinghabit.dto.PageResponseDTO;
 
 import java.util.List;
 
@@ -117,5 +118,42 @@ public class BookController {
                 );
 
         return ResponseEntity.ok(books);
+    }
+
+    @GetMapping("/search/paginated")
+    public ResponseEntity<PageResponseDTO<BookResponseDTO>> searchBooksPaginated(
+
+            @RequestParam(required = false) Long userId,
+
+            @RequestParam(required = false) String title,
+
+            @RequestParam(required = false) String author,
+
+            @RequestParam(required = false) String genre,
+
+            @RequestParam(required = false) BookStatus status,
+
+            @RequestParam(defaultValue = "0") int page,
+
+            @RequestParam(defaultValue = "10") int size,
+
+            @RequestParam(defaultValue = "id") String sortBy,
+
+            @RequestParam(defaultValue = "asc") String direction) {
+
+        PageResponseDTO<BookResponseDTO> result =
+                bookService.searchBooksPaginated(
+                        userId,
+                        title,
+                        author,
+                        genre,
+                        status,
+                        page,
+                        size,
+                        sortBy,
+                        direction
+                );
+
+        return ResponseEntity.ok(result);
     }
 }
