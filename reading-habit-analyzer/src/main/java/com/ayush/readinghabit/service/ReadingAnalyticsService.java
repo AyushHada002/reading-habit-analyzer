@@ -8,7 +8,11 @@ import com.ayush.readinghabit.repository.BookRepository;
 import com.ayush.readinghabit.repository.ReadingSessionRepository;
 import com.ayush.readinghabit.repository.UserRepository;
 import org.springframework.stereotype.Service;
+import com.ayush.readinghabit.dto.DailyReadingStatsDTO;
+import com.ayush.readinghabit.dto.MonthlyReadingStatsDTO;
 
+import java.time.YearMonth;
+import java.util.ArrayList;
 import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.List;
@@ -159,5 +163,128 @@ public class ReadingAnalyticsService {
     private double roundToTwoDecimals(double value) {
 
         return Math.round(value * 100.0) / 100.0;
+    }
+
+    public MonthlyReadingStatsDTO getMonthlyStats(
+            Long userId,
+            YearMonth month) {
+
+        if (!userRepository.existsById(userId)) {
+            throw new ResourceNotFoundException(
+                    "User not found with id: " + userId
+            );
+        }
+
+        LocalDate startDate =
+                month.atDay(1);
+
+        LocalDate endDate =
+                month.atEndOfMonth();
+
+        long totalSessions =
+                readingSessionRepository
+                        .countByUserIdAndDateRange(
+                                userId,
+                                startDate,
+                                endDate
+                        );
+
+        long totalPagesRead =
+                readingSessionRepository
+                        .sumPagesReadByUserIdAndDateRange(
+                                userId,
+                                startDate,
+                                endDate
+                        );
+
+        long totalReadingMinutes =
+                readingSessionRepository
+                        .sumDurationMinutesByUserIdAndDateRange(
+                                userId,
+                                startDate,
+                                endDate
+                        );
+
+        double averagePagesPerSession = 0.0;
+        double averageMinutesPerSession = 0.0;
+
+        if (totalSessions > 0) {
+
+            averagePagesPerSession =
+                    (double) totalPagesRead
+                            / totalSessions;
+
+            averageMinutesPerSession =
+                    (double) totalReadingMinutes
+                            / totalSessions;
+        }
+
+        return new MonthlyReadingStatsDTO(
+                userId,
+                month,
+                totalSessions,
+                totalPagesRead,
+                totalReadingMinutes,
+                roundToTwoDecimals(
+                        averagePagesPerSession
+                ),
+                roundToTwoDecimals(
+                        averageMinutesPerSession
+                )
+        );
+    }
+
+    public List<DailyReadingStatsDTO> getDailyStats(
+            Long userId,
+            YearMonth month) {
+
+        if (!userRepository.existsById(userId)) {
+            throw new ResourceNotFoundException(
+                    "User not found with id: " + userId
+            );
+        }
+
+        LocalDate startDate =
+                month.atDay(1);
+
+        LocalDate endDate =
+                month.atEndOfMonth();
+
+        List<Object[]> results =
+                readingSessionRepository
+                        .findDailyReadingStats(
+                                userId,
+                                startDate,
+                                endDate
+                        );
+
+        List<DailyReadingStatsDTO> dailyStats =
+                new ArrayList<>();
+
+        for (Object[] row : results) {
+
+            LocalDate date =
+                    (LocalDate) row[0];
+
+            long totalSessions =
+                    ((Number) row[1]).longValue();
+
+            long pagesRead =
+                    ((Number) row[2]).longValue();
+
+            long readingMinutes =
+                    ((Number) row[3]).longValue();
+
+            dailyStats.add(
+                    new DailyReadingStatsDTO(
+                            date,
+                            totalSessions,
+                            pagesRead,
+                            readingMinutes
+                    )
+            );
+        }
+
+        return dailyStats;
     }
 }

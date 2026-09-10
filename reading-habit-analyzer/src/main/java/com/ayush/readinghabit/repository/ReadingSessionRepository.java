@@ -74,4 +74,35 @@ public interface ReadingSessionRepository
             @Param("startDate") LocalDate startDate,
             @Param("endDate") LocalDate endDate
     );
+
+    @Query("""
+        SELECT COUNT(r)
+        FROM ReadingSession r
+        WHERE r.user.id = :userId
+        AND r.readingDate >= :startDate
+        AND r.readingDate <= :endDate
+        """)
+    long countByUserIdAndDateRange(
+            @Param("userId") Long userId,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate
+    );
+
+    @Query("""
+        SELECT r.readingDate,
+               COUNT(r),
+               COALESCE(SUM(r.pagesRead), 0),
+               COALESCE(SUM(r.durationMinutes), 0)
+        FROM ReadingSession r
+        WHERE r.user.id = :userId
+        AND r.readingDate >= :startDate
+        AND r.readingDate <= :endDate
+        GROUP BY r.readingDate
+        ORDER BY r.readingDate
+        """)
+    List<Object[]> findDailyReadingStats(
+            @Param("userId") Long userId,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate
+    );
 }
