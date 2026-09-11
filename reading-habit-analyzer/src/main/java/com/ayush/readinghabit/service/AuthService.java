@@ -7,20 +7,25 @@ import com.ayush.readinghabit.exception.AuthenticationException;
 import com.ayush.readinghabit.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import com.ayush.readinghabit.service.JwtService;
 
 @Service
 public class AuthService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
 
     public AuthService(
             UserRepository userRepository,
-            PasswordEncoder passwordEncoder) {
+            PasswordEncoder passwordEncoder,
+            JwtService jwtService) {
 
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.jwtService = jwtService;
     }
+
 
     public LoginResponseDTO login(
             LoginRequestDTO request) {
@@ -46,10 +51,17 @@ public class AuthService {
             );
         }
 
+        String token =
+                jwtService.generateToken(
+                        user.getId(),
+                        user.getEmail()
+                );
+
         return new LoginResponseDTO(
                 user.getId(),
                 user.getName(),
                 user.getEmail(),
+                token,
                 "Login successful"
         );
     }
