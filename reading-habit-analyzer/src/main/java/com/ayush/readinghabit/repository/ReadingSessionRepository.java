@@ -8,6 +8,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
+
 import java.time.LocalDate;
 import java.util.List;
 import java.time.LocalDate;
@@ -41,6 +42,11 @@ public interface ReadingSessionRepository
     );
 
     long countByUserId(Long userId);
+
+    Page<ReadingSession> findByUserIdOrderByReadingDateDesc(
+            Long userId,
+            Pageable pageable
+    );
 
     @Query("""
             SELECT COALESCE(SUM(r.pagesRead), 0)
@@ -118,5 +124,21 @@ public interface ReadingSessionRepository
             @Param("userId") Long userId,
             @Param("startDate") LocalDate startDate,
             @Param("endDate") LocalDate endDate
+    );
+
+    @Query("""
+        SELECT r.book.id,
+               r.book.title,
+               r.book.author,
+               COALESCE(SUM(r.pagesRead), 0),
+               COALESCE(SUM(r.durationMinutes), 0),
+               COUNT(r)
+        FROM ReadingSession r
+        WHERE r.user.id = :userId
+        GROUP BY r.book.id, r.book.title, r.book.author
+        ORDER BY SUM(r.pagesRead) DESC
+        """)
+    List<Object[]> findTopBooksByUserId(
+            @Param("userId") Long userId
     );
 }

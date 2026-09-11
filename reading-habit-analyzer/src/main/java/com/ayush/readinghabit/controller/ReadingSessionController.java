@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.ayush.readinghabit.dto.PageResponseDTO;
 import java.time.LocalDate;
+import com.ayush.readinghabit.dto.TopBookDTO;
 
 import java.util.List;
 
@@ -103,6 +104,35 @@ public class ReadingSessionController {
                         size,
                         sortBy,
                         direction
+                )
+        );
+    }
+
+    @GetMapping("/user/{userId}/recent")
+    public ResponseEntity<PageResponseDTO<ReadingSessionResponseDTO>>
+    getRecentActivity(
+            @PathVariable Long userId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size) {
+
+        return ResponseEntity.ok(
+                readingSessionService.getRecentActivity(
+                        userId,
+                        page,
+                        size
+                )
+        );
+    }
+
+    @GetMapping("/user/{userId}/top-books")
+    public ResponseEntity<List<TopBookDTO>> getTopBooks(
+            @PathVariable Long userId,
+            @RequestParam(defaultValue = "5") int limit) {
+
+        return ResponseEntity.ok(
+                readingSessionService.getTopBooks(
+                        userId,
+                        limit
                 )
         );
     }

@@ -26,6 +26,7 @@ import com.ayush.readinghabit.dto.PageResponseDTO;
 import com.ayush.readinghabit.entity.ReadingSession;
 import com.ayush.readinghabit.exception.BusinessRuleException;
 import com.ayush.readinghabit.repository.ReadingSessionSpecification;
+import com.ayush.readinghabit.dto.TopBookDTO;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -844,5 +845,62 @@ public class ReadingSessionService {
                 );
 
         return convertToPageResponse(sessionPage);
+    }
+
+    public PageResponseDTO<ReadingSessionResponseDTO> getRecentActivity(
+            Long userId,
+            int page,
+            int size) {
+
+        if (!userRepository.existsById(userId)) {
+            throw new ResourceNotFoundException(
+                    "User not found with id: " + userId
+            );
+        }
+
+        validatePagination(page, size);
+
+        Pageable pageable =
+                PageRequest.of(page, size);
+
+        Page<ReadingSession> sessionPage =
+                readingSessionRepository
+                        .findByUserIdOrderByReadingDateDesc(
+                                userId,
+                                pageable
+                        );
+
+        return convertToPageResponse(sessionPage);
+    }
+
+    public List<TopBookDTO> getTopBooks(
+            Long userId,
+            int limit) {
+
+        if (!userRepository.existsById(userId)) {
+            throw new ResourceNotFoundException(
+                    "User not found with id: " + userId
+            );
+        }
+
+        if (limit < 1 || limit > 20) {
+            throw new BusinessRuleException(
+                    "Limit must be between 1 and 20"
+            );
+        }
+
+        return readingSessionRepository
+                .findTopBooksByUserId(userId)
+                .stream()
+                .limit(limit)
+                .map(row -> new TopBookDTO(
+                        ((Number) row[0]).longValue(),
+                        (String) row[1],
+                        (String) row[2],
+                        ((Number) row[3]).longValue(),
+                        ((Number) row[4]).longValue(),
+                        ((Number) row[5]).longValue()
+                ))
+                .toList();
     }
 }
