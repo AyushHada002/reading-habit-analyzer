@@ -7,6 +7,7 @@ import com.ayush.readinghabit.exception.DuplicateResourceException;
 import com.ayush.readinghabit.exception.ResourceNotFoundException;
 import com.ayush.readinghabit.repository.UserRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -15,9 +16,15 @@ import java.util.List;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    public UserService(UserRepository userRepository) {
+
+    public UserService(
+            UserRepository userRepository,
+            PasswordEncoder passwordEncoder) {
+
         this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     public UserResponseDTO createUser(UserRequestDTO request) {
@@ -32,7 +39,11 @@ public class UserService {
 
         user.setName(request.getName());
         user.setEmail(request.getEmail());
-        user.setPassword(request.getPassword());
+        user.setPassword(
+                passwordEncoder.encode(
+                        request.getPassword()
+                )
+        );
         user.setCreatedAt(LocalDateTime.now());
 
         User savedUser = userRepository.save(user);
@@ -73,7 +84,11 @@ public class UserService {
 
         existingUser.setName(request.getName());
         existingUser.setEmail(request.getEmail());
-        existingUser.setPassword(request.getPassword());
+        existingUser.setPassword(
+                passwordEncoder.encode(
+                        request.getPassword()
+                )
+        );
 
         User updatedUser = userRepository.save(existingUser);
 
