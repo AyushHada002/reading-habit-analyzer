@@ -102,4 +102,22 @@ public class GlobalExceptionHandler {
                 HttpStatus.FORBIDDEN
         );
     }
+
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<ErrorResponse> handleAuthenticationException(
+            AuthenticationException ex) {
+
+        ErrorResponse errorResponse =
+                new ErrorResponse(
+                        LocalDateTime.now(),
+                        HttpStatus.UNAUTHORIZED.value(),
+                        "AUTHENTICATION_FAILED",
+                        ex.getMessage()
+                );
+
+        return new ResponseEntity<>(
+                errorResponse,
+                HttpStatus.UNAUTHORIZED
+        );
+    }
 }
