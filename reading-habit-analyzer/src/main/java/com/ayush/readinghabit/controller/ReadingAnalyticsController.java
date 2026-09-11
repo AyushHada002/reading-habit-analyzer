@@ -1,11 +1,12 @@
 package com.ayush.readinghabit.controller;
 
+import com.ayush.readinghabit.dto.DailyReadingStatsDTO;
+import com.ayush.readinghabit.dto.MonthlyReadingStatsDTO;
 import com.ayush.readinghabit.dto.ReadingAnalyticsDTO;
+import com.ayush.readinghabit.service.AuthenticatedUserService;
 import com.ayush.readinghabit.service.ReadingAnalyticsService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import com.ayush.readinghabit.dto.DailyReadingStatsDTO;
-import com.ayush.readinghabit.dto.MonthlyReadingStatsDTO;
 
 import java.time.YearMonth;
 import java.util.List;
@@ -14,51 +15,58 @@ import java.util.List;
 @RequestMapping("/api/analytics")
 public class ReadingAnalyticsController {
 
-    private final ReadingAnalyticsService readingAnalyticsService;
+    private final ReadingAnalyticsService analyticsService;
+    private final AuthenticatedUserService authenticatedUserService;
 
     public ReadingAnalyticsController(
-            ReadingAnalyticsService readingAnalyticsService) {
+            ReadingAnalyticsService analyticsService,
+            AuthenticatedUserService authenticatedUserService) {
 
-        this.readingAnalyticsService = readingAnalyticsService;
+        this.analyticsService = analyticsService;
+        this.authenticatedUserService =
+                authenticatedUserService;
     }
 
-    @GetMapping("/user/{userId}")
-    public ResponseEntity<ReadingAnalyticsDTO> getUserAnalytics(
-            @PathVariable Long userId) {
+    @GetMapping("/my")
+    public ResponseEntity<ReadingAnalyticsDTO> getMyAnalytics() {
 
-        ReadingAnalyticsDTO analytics =
-                readingAnalyticsService.getUserAnalytics(userId);
+        Long currentUserId =
+                authenticatedUserService.getCurrentUserId();
 
-        return ResponseEntity.ok(analytics);
+        return ResponseEntity.ok(
+                analyticsService.getUserAnalytics(
+                        currentUserId
+                )
+        );
     }
 
-    @GetMapping("/user/{userId}/monthly")
-    public ResponseEntity<MonthlyReadingStatsDTO> getMonthlyStats(
-            @PathVariable Long userId,
+    @GetMapping("/my/monthly")
+    public ResponseEntity<MonthlyReadingStatsDTO> getMyMonthlyStats(
             @RequestParam YearMonth month) {
 
-        MonthlyReadingStatsDTO stats =
-                readingAnalyticsService.getMonthlyStats(
-                        userId,
-                        month
-                );
+        Long currentUserId =
+                authenticatedUserService.getCurrentUserId();
 
-        return ResponseEntity.ok(stats);
+        return ResponseEntity.ok(
+                analyticsService.getMonthlyStats(
+                        currentUserId,
+                        month
+                )
+        );
     }
 
-    @GetMapping("/user/{userId}/daily")
-    public ResponseEntity<List<DailyReadingStatsDTO>> getDailyStats(
-            @PathVariable Long userId,
+    @GetMapping("/my/daily")
+    public ResponseEntity<List<DailyReadingStatsDTO>> getMyDailyStats(
             @RequestParam YearMonth month) {
 
-        List<DailyReadingStatsDTO> stats =
-                readingAnalyticsService.getDailyStats(
-                        userId,
+        Long currentUserId =
+                authenticatedUserService.getCurrentUserId();
+
+        return ResponseEntity.ok(
+                analyticsService.getDailyStats(
+                        currentUserId,
                         month
-                );
-
-        return ResponseEntity.ok(stats);
+                )
+        );
     }
-
-
 }

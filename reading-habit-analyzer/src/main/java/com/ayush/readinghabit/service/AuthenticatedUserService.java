@@ -1,5 +1,6 @@
 package com.ayush.readinghabit.service;
 
+import com.ayush.readinghabit.exception.AuthenticationException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -15,13 +16,24 @@ public class AuthenticatedUserService {
                         .getAuthentication();
 
         if (authentication == null
-                || !authentication.isAuthenticated()) {
+                || !authentication.isAuthenticated()
+                || authentication.getPrincipal() == null) {
 
-            throw new SecurityException(
+            throw new AuthenticationException(
                     "User is not authenticated"
             );
         }
 
-        return (Long) authentication.getPrincipal();
+        Object principal =
+                authentication.getPrincipal();
+
+        if (!(principal instanceof Long)) {
+
+            throw new AuthenticationException(
+                    "Invalid authenticated user"
+            );
+        }
+
+        return (Long) principal;
     }
 }

@@ -1,7 +1,8 @@
 package com.ayush.readinghabit.service;
 
-import com.ayush.readinghabit.entity.User;
+import com.ayush.readinghabit.exception.AccessDeniedException;
 import com.ayush.readinghabit.exception.ResourceNotFoundException;
+import com.ayush.readinghabit.entity.User;
 import com.ayush.readinghabit.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
@@ -10,7 +11,9 @@ public class CurrentUserService {
 
     private final UserRepository userRepository;
 
-    public CurrentUserService(UserRepository userRepository) {
+    public CurrentUserService(
+            UserRepository userRepository) {
+
         this.userRepository = userRepository;
     }
 
@@ -19,7 +22,8 @@ public class CurrentUserService {
         return userRepository.findById(userId)
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
-                                "User not found with id: " + userId
+                                "User not found with id: "
+                                        + userId
                         )
                 );
     }
@@ -29,7 +33,8 @@ public class CurrentUserService {
             Long resourceUserId) {
 
         if (!requestedUserId.equals(resourceUserId)) {
-            throw new SecurityException(
+
+            throw new AccessDeniedException(
                     "You do not have permission to access this resource"
             );
         }
