@@ -19,6 +19,7 @@ import org.springframework.data.domain.Sort;
 import com.ayush.readinghabit.exception.BusinessRuleException;
 
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.List;
 
 @Service
@@ -40,6 +41,11 @@ public class ReadingGoalService {
 
     public ReadingGoalResponseDTO createGoal(
             ReadingGoalRequestDTO request) {
+
+        validateGoalValues(
+                request.getTargetPages(),
+                request.getTargetMinutes()
+        );
 
         User user = findUser(request.getUserId());
 
@@ -102,12 +108,16 @@ public class ReadingGoalService {
             Long id,
             ReadingGoalRequestDTO request) {
 
+        validateGoalValues(
+                request.getTargetPages(),
+                request.getTargetMinutes()
+        );
+
         ReadingGoal existingGoal =
                 readingGoalRepository.findById(id)
                         .orElseThrow(() ->
                                 new ResourceNotFoundException(
-                                        "Reading goal not found with id: "
-                                                + id
+                                        "Reading goal not found with id: " + id
                                 )
                         );
 
@@ -360,5 +370,47 @@ public class ReadingGoalService {
         }
 
         return sortBy;
+    }
+
+    public ReadingGoalResponseDTO getGoalByUserAndMonth(
+            Long userId,
+            YearMonth month) {
+
+        if (!userRepository.existsById(userId)) {
+            throw new ResourceNotFoundException(
+                    "User not found with id: " + userId
+            );
+        }
+
+        ReadingGoal goal =
+                readingGoalRepository
+                        .findByUserIdAndMonth(userId, month)
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException(
+                                        "No reading goal found for user id: "
+                                                + userId
+                                                + " and month: "
+                                                + month
+                                )
+                        );
+
+        return convertToResponseDTO(goal);
+    }
+
+    private void validateGoalValues(
+            Integer targetPages,
+            Integer targetMinutes) {
+
+        if (targetPages == null || targetPages <= 0) {
+            throw new BusinessRuleException(
+                    "Target pages must be greater than 0"
+            );
+        }
+
+        if (targetMinutes == null || targetMinutes <= 0) {
+            throw new BusinessRuleException(
+                    "Target minutes must be greater than 0"
+            );
+        }
     }
 }

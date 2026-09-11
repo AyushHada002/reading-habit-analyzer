@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import com.ayush.readinghabit.dto.ReadingGoalProgressDTO;
 import com.ayush.readinghabit.dto.PageResponseDTO;
 
+import java.time.YearMonth;
 import java.util.List;
 
 @RestController
@@ -63,6 +64,20 @@ public class ReadingGoalController {
                         size,
                         sortBy,
                         direction
+                )
+        );
+    }
+
+    @GetMapping("/user/{userId}/month/{month}")
+    public ResponseEntity<ReadingGoalResponseDTO>
+    getGoalByUserAndMonth(
+            @PathVariable Long userId,
+            @PathVariable YearMonth month) {
+
+        return ResponseEntity.ok(
+                readingGoalService.getGoalByUserAndMonth(
+                        userId,
+                        month
                 )
         );
     }
