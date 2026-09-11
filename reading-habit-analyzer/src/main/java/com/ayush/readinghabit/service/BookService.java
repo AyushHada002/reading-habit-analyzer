@@ -20,6 +20,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -28,15 +29,18 @@ public class BookService {
     private final BookRepository bookRepository;
     private final UserRepository userRepository;
     private final ReadingSessionRepository readingSessionRepository;
+    private final CurrentUserService currentUserService;
 
     public BookService(
             BookRepository bookRepository,
             UserRepository userRepository,
-            ReadingSessionRepository readingSessionRepository) {
+            ReadingSessionRepository readingSessionRepository,
+            CurrentUserService currentUserService) {
 
         this.bookRepository = bookRepository;
         this.userRepository = userRepository;
         this.readingSessionRepository = readingSessionRepository;
+        this.currentUserService = currentUserService;
     }
 
     // Create Book
@@ -75,7 +79,8 @@ public class BookService {
     }
 
     // Get Book By ID
-    public BookResponseDTO getBookById(Long id) {
+    public BookResponseDTO getBookById(
+            Long id) {
 
         Book book = bookRepository.findById(id)
                 .orElseThrow(() ->
@@ -83,6 +88,9 @@ public class BookService {
                                 "Book not found with id: " + id
                         )
                 );
+
+        Long userId = 0L;
+        validateBookOwnership(book, userId);
 
         return convertToResponseDTO(book);
     }
@@ -203,8 +211,8 @@ public class BookService {
     private void validateBookDatesAreNotFuture(
             BookRequestDTO request) {
 
-        java.time.LocalDate today =
-                java.time.LocalDate.now();
+        LocalDate today =
+                LocalDate.now();
 
         if (request.getStartedDate() != null
                 && request.getStartedDate().isAfter(today)) {
@@ -241,7 +249,7 @@ public class BookService {
 
             if (book.getStartedDate() == null) {
                 book.setStartedDate(
-                        java.time.LocalDate.now()
+                        LocalDate.now()
                 );
             }
 
@@ -253,13 +261,13 @@ public class BookService {
 
             if (book.getStartedDate() == null) {
                 book.setStartedDate(
-                        java.time.LocalDate.now()
+                        LocalDate.now()
                 );
             }
 
             if (book.getCompletedDate() == null) {
                 book.setCompletedDate(
-                        java.time.LocalDate.now()
+                        LocalDate.now()
                 );
             }
         }
@@ -484,6 +492,16 @@ public class BookService {
                 bookPage.getTotalPages(),
                 bookPage.isFirst(),
                 bookPage.isLast()
+        );
+    }
+
+    private void validateBookOwnership(
+            Book book,
+            Long userId) {
+
+        currentUserService.validateUserAccess(
+                userId,
+                book.getUser().getId()
         );
     }
 }

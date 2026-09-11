@@ -84,4 +84,22 @@ public class GlobalExceptionHandler {
                 HttpStatus.BAD_REQUEST
         );
     }
+
+    @ExceptionHandler(SecurityException.class)
+    public ResponseEntity<ErrorResponse> handleSecurityException(
+            SecurityException ex) {
+
+        ErrorResponse errorResponse =
+                new ErrorResponse(
+                        LocalDateTime.now(),
+                        HttpStatus.FORBIDDEN.value(),
+                        "ACCESS_DENIED",
+                        ex.getMessage()
+                );
+
+        return new ResponseEntity<>(
+                errorResponse,
+                HttpStatus.FORBIDDEN
+        );
+    }
 }
