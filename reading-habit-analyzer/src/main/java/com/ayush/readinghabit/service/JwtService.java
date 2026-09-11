@@ -1,5 +1,6 @@
 package com.ayush.readinghabit.service;
 
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
@@ -26,7 +27,9 @@ public class JwtService {
         this.expiration = expiration;
     }
 
-    public String generateToken(Long userId, String email) {
+    public String generateToken(
+            Long userId,
+            String email) {
 
         Date now = new Date();
 
@@ -40,5 +43,41 @@ public class JwtService {
                 .expiration(expiryDate)
                 .signWith(secretKey)
                 .compact();
+    }
+
+    public Claims extractAllClaims(String token) {
+
+        return Jwts.parser()
+                .verifyWith(secretKey)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+    }
+
+    public Long extractUserId(String token) {
+
+        String subject =
+                extractAllClaims(token).getSubject();
+
+        return Long.valueOf(subject);
+    }
+
+    public String extractEmail(String token) {
+
+        return extractAllClaims(token)
+                .get("email", String.class);
+    }
+
+    public boolean isTokenValid(String token) {
+
+        try {
+            Claims claims = extractAllClaims(token);
+
+            return claims.getExpiration()
+                    .after(new Date());
+
+        } catch (Exception e) {
+            return false;
+        }
     }
 }
