@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Collections;
 
 @Component
 public class JwtAuthenticationFilter
@@ -57,7 +58,7 @@ public class JwtAuthenticationFilter
                 new UsernamePasswordAuthenticationToken(
                         userId,
                         null,
-                        java.util.Collections.emptyList()
+                        Collections.emptyList()
                 );
 
         SecurityContextHolder
