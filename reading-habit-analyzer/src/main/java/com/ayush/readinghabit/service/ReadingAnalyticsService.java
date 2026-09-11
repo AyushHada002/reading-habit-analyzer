@@ -3,6 +3,7 @@ package com.ayush.readinghabit.service;
 import com.ayush.readinghabit.dto.ReadingAnalyticsDTO;
 import com.ayush.readinghabit.entity.BookStatus;
 import com.ayush.readinghabit.entity.ReadingSession;
+import com.ayush.readinghabit.entity.User;
 import com.ayush.readinghabit.exception.ResourceNotFoundException;
 import com.ayush.readinghabit.repository.BookRepository;
 import com.ayush.readinghabit.repository.ReadingSessionRepository;
@@ -286,5 +287,79 @@ public class ReadingAnalyticsService {
         }
 
         return dailyStats;
+    }
+
+    public record AnalyticsData(
+            long currentReadingStreak
+    ) {
+    }
+
+    public AnalyticsData getAnalyticsData(Long userId) {
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "User not found with id: " + userId
+                        )
+                );
+
+        List<ReadingSession> sessions =
+                readingSessionRepository
+                        .findByUserId(user.getId());
+
+        long currentReadingStreak =
+                calculateCurrentReadingStreak(sessions);
+
+        return new AnalyticsData(
+                currentReadingStreak
+        );
+    }
+
+    private long calculateCurrentReadingStreak(
+            List<ReadingSession> sessions) {
+
+        if (sessions == null || sessions.isEmpty()) {
+            return 0;
+        }
+
+        List<LocalDate> readingDates = sessions.stream()
+                .map(ReadingSession::getReadingDate)
+                .filter(date -> date != null)
+                .distinct()
+                .sorted(Comparator.reverseOrder())
+                .toList();
+
+        if (readingDates.isEmpty()) {
+            return 0;
+        }
+
+        LocalDate today = LocalDate.now();
+
+        LocalDate latestDate = readingDates.get(0);
+
+        // If the latest reading was before yesterday,
+        // there is no current streak.
+        if (latestDate.isBefore(today.minusDays(1))) {
+            return 0;
+        }
+
+        long streak = 1;
+
+        for (int i = 1; i < readingDates.size(); i++) {
+
+            LocalDate previousDate = readingDates.get(i - 1);
+            LocalDate currentDate = readingDates.get(i);
+
+            if (previousDate.minusDays(1).equals(currentDate)) {
+
+                streak++;
+
+            } else {
+
+                break;
+            }
+        }
+
+        return streak;
     }
 }
