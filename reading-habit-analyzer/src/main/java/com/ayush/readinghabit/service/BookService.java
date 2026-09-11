@@ -80,7 +80,8 @@ public class BookService {
 
     // Get Book By ID
     public BookResponseDTO getBookById(
-            Long id) {
+            Long id,
+            Long currentUserId) {
 
         Book book = bookRepository.findById(id)
                 .orElseThrow(() ->
@@ -89,8 +90,10 @@ public class BookService {
                         )
                 );
 
-        Long userId = 0L;
-        validateBookOwnership(book, userId);
+        validateBookOwnership(
+                book,
+                currentUserId
+        );
 
         return convertToResponseDTO(book);
     }
@@ -144,7 +147,9 @@ public class BookService {
     }
 
     // Delete Book
-    public void deleteBook(Long id) {
+    public void deleteBook(
+            Long id,
+            Long currentUserId) {
 
         Book existingBook = bookRepository.findById(id)
                 .orElseThrow(() ->
@@ -172,7 +177,9 @@ public class BookService {
         );
     }
 
-    public BookProgressDTO getBookProgress(Long bookId) {
+    public BookProgressDTO getBookProgress(
+            Long bookId,
+            Long currentUserId) {
 
         Book book = bookRepository.findById(bookId)
                 .orElseThrow(() ->

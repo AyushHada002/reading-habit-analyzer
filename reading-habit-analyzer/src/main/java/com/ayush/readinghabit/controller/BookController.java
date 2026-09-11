@@ -2,158 +2,139 @@ package com.ayush.readinghabit.controller;
 
 import com.ayush.readinghabit.dto.BookRequestDTO;
 import com.ayush.readinghabit.dto.BookResponseDTO;
+import com.ayush.readinghabit.dto.BookProgressDTO;
+import com.ayush.readinghabit.dto.PageResponseDTO;
+import com.ayush.readinghabit.entity.BookStatus;
+import com.ayush.readinghabit.service.AuthenticatedUserService;
 import com.ayush.readinghabit.service.BookService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import com.ayush.readinghabit.dto.BookProgressDTO;
-import com.ayush.readinghabit.entity.BookStatus;
-import com.ayush.readinghabit.dto.PageResponseDTO;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/books")
 public class BookController {
 
     private final BookService bookService;
+    private final AuthenticatedUserService authenticatedUserService;
 
-    public BookController(BookService bookService) {
+    public BookController(
+            BookService bookService,
+            AuthenticatedUserService authenticatedUserService) {
+
         this.bookService = bookService;
+        this.authenticatedUserService =
+                authenticatedUserService;
     }
 
-    // Create Book
     @PostMapping
     public ResponseEntity<BookResponseDTO> createBook(
             @Valid @RequestBody BookRequestDTO request) {
 
-        BookResponseDTO createdBook =
-                bookService.createBook(request);
+        Long currentUserId =
+                authenticatedUserService.getCurrentUserId();
+
+        request.setUserId(currentUserId);
 
         return new ResponseEntity<>(
-                createdBook,
+                bookService.createBook(request),
                 HttpStatus.CREATED
         );
     }
 
-    // Get All Books
     @GetMapping
-    public ResponseEntity<List<BookResponseDTO>> getAllBooks() {
+    public ResponseEntity<?> getAllBooks() {
 
-        List<BookResponseDTO> books =
-                bookService.getAllBooks();
+        Long currentUserId =
+                authenticatedUserService.getCurrentUserId();
 
-        return ResponseEntity.ok(books);
+        return ResponseEntity.ok(
+                bookService.getBooksByUserId(currentUserId)
+        );
     }
 
-    // Get Book By ID
+    @GetMapping("/search")
+    public ResponseEntity<?> searchBooks(
+            @RequestParam(required = false) String title,
+            @RequestParam(required = false) String author,
+            @RequestParam(required = false) String genre,
+            @RequestParam(required = false) BookStatus status) {
+
+        Long currentUserId =
+                authenticatedUserService.getCurrentUserId();
+
+        return ResponseEntity.ok(
+                bookService.searchBooks(
+                        currentUserId,
+                        title,
+                        author,
+                        genre,
+                        status
+                )
+        );
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<BookResponseDTO> getBookById(
             @PathVariable Long id) {
 
-        BookResponseDTO book =
-                bookService.getBookById(id);
+        Long currentUserId =
+                authenticatedUserService.getCurrentUserId();
 
-        return ResponseEntity.ok(book);
-    }
-
-    // Get Books By User ID
-    @GetMapping("/user/{userId}")
-    public ResponseEntity<List<BookResponseDTO>> getBooksByUserId(
-            @PathVariable Long userId) {
-
-        List<BookResponseDTO> books =
-                bookService.getBooksByUserId(userId);
-
-        return ResponseEntity.ok(books);
+        return ResponseEntity.ok(
+                bookService.getBookById(
+                        id,
+                        currentUserId
+                )
+        );
     }
 
     @GetMapping("/{id}/progress")
     public ResponseEntity<BookProgressDTO> getBookProgress(
             @PathVariable Long id) {
 
-        BookProgressDTO progress =
-                bookService.getBookProgress(id);
+        Long currentUserId =
+                authenticatedUserService.getCurrentUserId();
 
-        return ResponseEntity.ok(progress);
+        return ResponseEntity.ok(
+                bookService.getBookProgress(
+                        id,
+                        currentUserId
+                )
+        );
     }
 
-    // Update Book
     @PutMapping("/{id}")
     public ResponseEntity<BookResponseDTO> updateBook(
             @PathVariable Long id,
             @Valid @RequestBody BookRequestDTO request) {
 
-        BookResponseDTO updatedBook =
-                bookService.updateBook(id, request);
+        Long currentUserId =
+                authenticatedUserService.getCurrentUserId();
 
-        return ResponseEntity.ok(updatedBook);
+        request.setUserId(currentUserId);
+
+        return ResponseEntity.ok(
+                bookService.updateBook(
+                        id,
+                        request
+                )
+        );
     }
 
-    // Delete Book
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteBook(
             @PathVariable Long id) {
 
-        bookService.deleteBook(id);
+        Long currentUserId =
+                authenticatedUserService.getCurrentUserId();
+
+        bookService.deleteBook(
+                id,
+                currentUserId
+        );
 
         return ResponseEntity.noContent().build();
-    }
-    @GetMapping("/search")
-    public ResponseEntity<List<BookResponseDTO>> searchBooks(
-            @RequestParam(required = false) Long userId,
-            @RequestParam(required = false) String title,
-            @RequestParam(required = false) String author,
-            @RequestParam(required = false) String genre,
-            @RequestParam(required = false) BookStatus status) {
-
-        List<BookResponseDTO> books =
-                bookService.searchBooks(
-                        userId,
-                        title,
-                        author,
-                        genre,
-                        status
-                );
-
-        return ResponseEntity.ok(books);
-    }
-
-    @GetMapping("/search/paginated")
-    public ResponseEntity<PageResponseDTO<BookResponseDTO>> searchBooksPaginated(
-
-            @RequestParam(required = false) Long userId,
-
-            @RequestParam(required = false) String title,
-
-            @RequestParam(required = false) String author,
-
-            @RequestParam(required = false) String genre,
-
-            @RequestParam(required = false) BookStatus status,
-
-            @RequestParam(defaultValue = "0") int page,
-
-            @RequestParam(defaultValue = "10") int size,
-
-            @RequestParam(defaultValue = "id") String sortBy,
-
-            @RequestParam(defaultValue = "asc") String direction) {
-
-        PageResponseDTO<BookResponseDTO> result =
-                bookService.searchBooksPaginated(
-                        userId,
-                        title,
-                        author,
-                        genre,
-                        status,
-                        page,
-                        size,
-                        sortBy,
-                        direction
-                );
-
-        return ResponseEntity.ok(result);
     }
 }

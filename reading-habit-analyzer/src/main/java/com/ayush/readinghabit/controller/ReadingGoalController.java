@@ -2,6 +2,7 @@ package com.ayush.readinghabit.controller;
 
 import com.ayush.readinghabit.dto.ReadingGoalRequestDTO;
 import com.ayush.readinghabit.dto.ReadingGoalResponseDTO;
+import com.ayush.readinghabit.service.AuthenticatedUserService;
 import com.ayush.readinghabit.service.ReadingGoalService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -18,11 +19,13 @@ import java.util.List;
 public class ReadingGoalController {
 
     private final ReadingGoalService readingGoalService;
+    private final AuthenticatedUserService authenticatedUserService;
 
     public ReadingGoalController(
-            ReadingGoalService readingGoalService) {
+            ReadingGoalService readingGoalService, AuthenticatedUserService authenticatedUserService) {
 
         this.readingGoalService = readingGoalService;
+        this.authenticatedUserService = authenticatedUserService;
     }
 
     @PostMapping

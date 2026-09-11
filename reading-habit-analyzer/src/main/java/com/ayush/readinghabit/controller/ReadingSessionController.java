@@ -2,6 +2,7 @@ package com.ayush.readinghabit.controller;
 
 import com.ayush.readinghabit.dto.ReadingSessionRequestDTO;
 import com.ayush.readinghabit.dto.ReadingSessionResponseDTO;
+import com.ayush.readinghabit.service.AuthenticatedUserService;
 import com.ayush.readinghabit.service.ReadingSessionService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -18,11 +19,15 @@ import java.util.List;
 public class ReadingSessionController {
 
     private final ReadingSessionService readingSessionService;
+    private final AuthenticatedUserService authenticatedUserService;
 
     public ReadingSessionController(
-            ReadingSessionService readingSessionService) {
+            ReadingSessionService readingSessionService,
+            AuthenticatedUserService authenticatedUserService) {
 
         this.readingSessionService = readingSessionService;
+        this.authenticatedUserService =
+                authenticatedUserService;
     }
 
     // Create Reading Session
@@ -247,6 +252,5 @@ public class ReadingSessionController {
                 )
         );
     }
-
 
 }

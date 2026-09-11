@@ -35,21 +35,18 @@ public class UserController {
 
     @GetMapping
     public ResponseEntity<List<UserResponseDTO>> getAllUsers() {
-
-        List<UserResponseDTO> users =
-                userService.getAllUsers();
-
-        return ResponseEntity.ok(users);
+        return ResponseEntity.ok(
+                userService.getAllUsers()
+        );
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<UserResponseDTO> getUserById(
             @PathVariable Long id) {
 
-        UserResponseDTO user =
-                userService.getUserById(id);
-
-        return ResponseEntity.ok(user);
+        return ResponseEntity.ok(
+                userService.getUserById(id)
+        );
     }
 
     @PutMapping("/{id}")
@@ -57,10 +54,9 @@ public class UserController {
             @PathVariable Long id,
             @Valid @RequestBody UserRequestDTO request) {
 
-        UserResponseDTO updatedUser =
-                userService.updateUser(id, request);
-
-        return ResponseEntity.ok(updatedUser);
+        return ResponseEntity.ok(
+                userService.updateUser(id, request)
+        );
     }
 
     @DeleteMapping("/{id}")
