@@ -11,11 +11,18 @@ import org.springframework.web.bind.annotation.*;
 import com.ayush.readinghabit.dto.PageResponseDTO;
 import java.time.LocalDate;
 import com.ayush.readinghabit.dto.TopBookDTO;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/reading-sessions")
+@Tag(
+        name = "Reading Sessions",
+        description = "Track reading activity and sessions"
+)
+@SecurityRequirement(name = "bearerAuth")
 public class ReadingSessionController {
 
     private final ReadingSessionService readingSessionService;

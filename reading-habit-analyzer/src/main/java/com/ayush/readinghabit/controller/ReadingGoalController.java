@@ -10,12 +10,19 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.ayush.readinghabit.dto.ReadingGoalProgressDTO;
 import com.ayush.readinghabit.dto.PageResponseDTO;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import java.time.YearMonth;
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/goals")
+@Tag(
+        name = "Reading Goals",
+        description = "Manage monthly reading goals and progress"
+)
+@SecurityRequirement(name = "bearerAuth")
 public class ReadingGoalController {
 
     private final ReadingGoalService readingGoalService;

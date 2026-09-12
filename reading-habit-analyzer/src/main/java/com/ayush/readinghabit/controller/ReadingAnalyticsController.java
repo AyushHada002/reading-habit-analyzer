@@ -7,12 +7,19 @@ import com.ayush.readinghabit.service.AuthenticatedUserService;
 import com.ayush.readinghabit.service.ReadingAnalyticsService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import java.time.YearMonth;
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/analytics")
+@Tag(
+        name = "Analytics",
+        description = "Reading statistics and analytics"
+)
+@SecurityRequirement(name = "bearerAuth")
 public class ReadingAnalyticsController {
 
     private final ReadingAnalyticsService analyticsService;

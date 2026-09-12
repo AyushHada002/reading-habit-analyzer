@@ -57,6 +57,13 @@ public class SecurityConfig {
                         )
                         .permitAll()
 
+                        // Swagger UI
+                        .requestMatchers(
+                                "/swagger-ui/**",
+                                "/v3/api-docs/**"
+                        )
+                        .permitAll()
+
                         // Temporary test endpoint
                         .requestMatchers("/api/test")
                         .permitAll()
